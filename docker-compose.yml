@@ -1,0 +1,49 @@
+# Desenvolvimento:  docker compose up -d postgres mailpit  (e pnpm dev na máquina)
+# Produção local:   docker compose --profile app up -d --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: apihub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-apihub}
+      POSTGRES_DB: apihub
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U apihub"]
+      interval: 5s
+      retries: 10
+
+  # Caixa local para testes. Sem profile: sobe junto com o banco. Só escuta em 127.0.0.1.
+  # O app na máquina usa 127.0.0.1:1025. O container web, no perfil app, usa o host mailpit.
+  mailpit:
+    image: axllent/mailpit:v1.31.3
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+  migrate:
+    profiles: [app]
+    build: { context: ., target: migrate }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://apihub:${POSTGRES_PASSWORD:-apihub}@postgres:5432/apihub?schema=public
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  web:
+    profiles: [app]
+    build: { context: ., target: runner }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://apihub:${POSTGRES_PASSWORD:-apihub}@postgres:5432/apihub?schema=public
+    ports: ["3000:3000"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp, /app/apps/web/.next/cache]
+    security_opt: ["no-new-privileges:true"]
+
+volumes:
+  pgdata:

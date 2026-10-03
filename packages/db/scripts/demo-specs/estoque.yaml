@@ -1,0 +1,15 @@
+openapi: 3.1.0
+info: { title: Estoque API, version: 3.1.0 }
+paths:
+  /skus/{sku}/saldo:
+    get:
+      summary: Saldo disponível por centro de distribuição
+      parameters: [{ name: sku, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Saldo } }
+  /reservas:
+    post: { summary: Reserva itens para um pedido, responses: { "201": { description: Reservado }, "409": { description: Sem saldo } } }
+  /reservas/{id}:
+    delete:
+      summary: Libera reserva
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "204": { description: Liberada } }

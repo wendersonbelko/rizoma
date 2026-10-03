@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <title>Rizoma</title>
+  <rect width="64" height="64" rx="14" fill="#0f7a68"/>
+  <g stroke="#e8f4f1" stroke-width="2.8" stroke-linecap="round">
+    <line x1="18" y1="20" x2="30" y2="30"/>
+    <line x1="30" y1="30" x2="46" y2="22"/>
+    <line x1="18" y1="20" x2="16" y2="40"/>
+    <line x1="16" y1="40" x2="30" y2="30"/>
+    <line x1="16" y1="40" x2="34" y2="48"/>
+    <line x1="30" y1="30" x2="34" y2="48"/>
+    <line x1="34" y1="48" x2="50" y2="36"/>
+    <line x1="46" y1="22" x2="50" y2="36"/>
+    <line x1="46" y1="22" x2="34" y2="48"/>
+  </g>
+  <circle cx="18" cy="20" r="4.2" fill="#e8f4f1"/>
+  <circle cx="46" cy="22" r="3.4" fill="#3fb59b" stroke="#e8f4f1" stroke-width="2"/>
+  <circle cx="16" cy="40" r="4.5" fill="#e8f4f1"/>
+  <circle cx="30" cy="30" r="3.3" fill="#3fb59b" stroke="#e8f4f1" stroke-width="2"/>
+  <circle cx="34" cy="48" r="3.6" fill="#3fb59b" stroke="#e8f4f1" stroke-width="2"/>
+  <circle cx="50" cy="36" r="3.1" fill="#e8f4f1"/>
+</svg>

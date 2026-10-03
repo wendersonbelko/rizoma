@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentação
+    url: https://wendersonbelko.github.io/rizoma/
+    about: Instalação, uso, passo a passo e solução de problemas.
+  - name: Reportar uma vulnerabilidade
+    url: https://github.com/wendersonbelko/rizoma/security/advisories/new
+    about: Falhas de segurança vão pelo reporte privado, nunca por issue pública.

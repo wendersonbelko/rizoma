@@ -1,0 +1,43 @@
+{
+  "name": "api-hub",
+  "private": true,
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "db:up": "docker compose up -d postgres mailpit",
+    "mail:dev": "pnpm --filter @api-hub/db mail:dev",
+    "db:migrate": "pnpm --filter @api-hub/db migrate:dev",
+    "db:deploy": "pnpm --filter @api-hub/db migrate:deploy",
+    "setup:keys": "node scripts/generate-keys.mjs",
+    "admin:recover": "pnpm --filter @api-hub/db recover --",
+    "test:integration": "pnpm --filter @api-hub/web test:integration",
+    "demo:seed": "pnpm --filter @api-hub/db demo:seed --",
+    "demo:fill": "pnpm --filter @api-hub/db demo:fill",
+    "docs:dev": "pnpm --filter @api-hub/docs docs:dev",
+    "docs:build": "pnpm --filter @api-hub/docs docs:build",
+    "docs:preview": "pnpm --filter @api-hub/docs docs:preview",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,mjs,cjs}": "eslint --max-warnings 0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "globals": "^17.12.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "turbo": "^2.11.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.71.0"
+  }
+}

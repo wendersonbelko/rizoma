@@ -1,0 +1,56 @@
+/*
+ * As mesmas cores dos temas Claro e Escuro do hub (packages/core/src/themes.ts).
+ */
+:root {
+  --vp-c-bg: #f4f7f5;
+  --vp-c-bg-alt: #ffffff;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-bg-soft: #ffffff;
+  --vp-c-text-1: #16242c;
+  --vp-c-text-2: #5b6b70;
+  --vp-c-divider: #e2e8e4;
+  --vp-c-brand-1: #0f7a68;
+  --vp-c-brand-2: #12907b;
+  --vp-c-brand-3: #0f7a68;
+  --vp-c-brand-soft: rgba(15, 122, 104, 0.14);
+
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(120deg, #0f7a68 20%, #3fb59b);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, rgba(63, 181, 155, 0.35) 50%, rgba(15, 122, 104, 0.35) 50%);
+  --vp-home-hero-image-filter: blur(56px);
+}
+
+.dark {
+  --vp-c-bg: #0f1316;
+  --vp-c-bg-alt: #1b2329;
+  --vp-c-bg-elv: #1b2329;
+  --vp-c-bg-soft: #1b2329;
+  --vp-c-text-1: #e6ebee;
+  --vp-c-text-2: #9aadb4;
+  --vp-c-divider: #2e3b42;
+  --vp-c-brand-1: #3fb59b;
+  --vp-c-brand-2: #5cc7ae;
+  --vp-c-brand-3: #2e9c84;
+  --vp-c-brand-soft: rgba(63, 181, 155, 0.16);
+}
+
+/* Prints das telas: moldura discreta para separar do fundo da página. */
+.vp-doc img {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+}
+
+/* Tabelas de referência ocupam a largura toda e não quebram códigos curtos. */
+.vp-doc table {
+  display: table;
+  width: 100%;
+}
+.vp-doc td code {
+  white-space: nowrap;
+}
+
+/* Passos numerados ("### 1. …") com o número em destaque. */
+.vp-doc h3 {
+  scroll-margin-top: 80px;
+}

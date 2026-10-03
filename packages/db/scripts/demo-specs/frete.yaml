@@ -1,0 +1,5 @@
+openapi: 3.0.3
+info: { title: Frete (legado), version: 0.9.0 }
+paths:
+  /cotacao:
+    post: { summary: Cota frete por CEP e peso, responses: { "200": { description: Cotação } } }

@@ -1,0 +1,34 @@
+name: Sugestão
+description: Uma funcionalidade nova ou uma melhoria no que já existe.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Comece pelo problema, não pela solução: fica mais fácil discutir alternativas.
+        Confira antes o [roadmap](https://wendersonbelko.github.io/rizoma/arquitetura/roadmap) e as issues existentes.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qual problema você quer resolver?
+      description: Quem passa por ele, em que tela ou fluxo, e com que frequência.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Como você imagina a solução?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que você considerou
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Você quer implementar?
+      options:
+        - Sim, posso abrir o PR
+        - Talvez, com orientação
+        - Não

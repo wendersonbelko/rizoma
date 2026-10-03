@@ -1,0 +1,651 @@
+generator client {
+  provider   = "prisma-client-js"
+  // Sem engine nativa em Rust: consultas compiladas em WASM e executadas pelo driver "pg".
+  // Imagem Docker menor e nada de binário por plataforma.
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  ADMIN
+  MAINTAINER
+  VIEWER
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+/// Como o acesso foi concedido. Define o que acontece quando o vínculo com a org muda.
+enum AccessGrant {
+  OWNER_SETUP
+  ORG_MEMBERSHIP
+  MANUAL_APPROVAL
+}
+
+enum AccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum OutsiderPolicy {
+  REQUEST_APPROVAL
+  BLOCK
+}
+
+enum TeamRole {
+  LEAD
+  MEMBER
+}
+
+enum Visibility {
+  ORG
+  TEAM
+}
+
+enum SpecSource {
+  CI_PUSH
+  URL_PULL
+  REPO_FILE
+  MANUAL_UPLOAD
+}
+
+/// Onde ficam os repositórios de código.
+enum SourceProviderType {
+  GITHUB
+  GITLAB
+  BITBUCKET
+  GENERIC
+}
+
+enum LinkKind {
+  CONSUMES
+  PUBLISHES_TO
+  SUBSCRIBES_TO
+  SHARES_LIBRARY
+  DEPENDS_ON
+}
+
+/// Formas de login disponíveis. Escolhidas no assistente e editáveis em Configurações.
+enum AuthProviderType {
+  GITHUB
+  GOOGLE
+  MICROSOFT
+  GITLAB
+  FACEBOOK
+  OIDC
+  CREDENTIALS
+}
+
+enum InviteKind {
+  INVITE
+  PASSWORD_RESET
+}
+
+/// Tipo de recurso externo ligado a um serviço.
+enum ResourceKind {
+  HTTP_API
+  QUEUE
+  TOPIC
+  WEBHOOK
+  DATABASE
+  CACHE
+  STORAGE
+  EMAIL_SMS
+  OTHER
+}
+
+/// Como o serviço usa o recurso externo.
+enum ResourceRelation {
+  CONSUMES
+  PROVIDES
+  PUBLISHES
+  SUBSCRIBES
+  SENDS_WEBHOOK
+  RECEIVES_WEBHOOK
+  READS
+  WRITES
+}
+
+enum ServiceRepoRole {
+  SOURCE
+  CLIENT_SDK
+  INFRA
+  CONTRACT
+}
+
+enum ServiceKind {
+  API
+  FRONTEND
+  WORKER
+}
+
+enum ChannelProtocol {
+  HTTP
+  GRPC
+  WEBSOCKET
+}
+
+// ─── Instalação (singleton) ─────────────────────────────────────────────
+
+model Installation {
+  id                     String         @id @default("singleton")
+  installed              Boolean        @default(false)
+  currentStep            String         @default("login")
+  orgName                String?
+  orgSlug                String?
+  allowedGithubOrgs      String[]
+  /// Domínios de e-mail que contam como "da empresa" (Google, Microsoft, GitLab, OIDC).
+  allowedEmailDomains    String[]
+  autoApproveOrgMembers  Boolean        @default(true)
+  outsiderPolicy         OutsiderPolicy @default(REQUEST_APPROVAL)
+  sessionMaxAgeHours     Int            @default(8)
+  membershipRecheckHours Int            @default(12)
+  accessRequestTtlDays   Int            @default(14)
+  /// Usuário do GitHub ou e-mail do primeiro administrador.
+  ownerIdentifier        String?
+  /// Recuperação de OWNER via CLI (pnpm admin:recover). Vale até recoveryExpiresAt.
+  recoveryIdentifier     String?
+  recoveryExpiresAt      DateTime?
+  /// Nome exibido no topo, na aba do navegador e no login.
+  appName                String         @default("Rizoma")
+  /// Um dos temas prontos (packages/core/src/themes.ts).
+  themeId                String         @default("prancheta")
+  /// Cores que sobrescrevem o tema: { accent: "#0f7a68", ... }.
+  themeOverrides         Json?
+  installedAt            DateTime?
+  /// Hash SHA-256 do token do cron (POST /api/v1/sync). O valor em claro só aparece na hora em que é gerado.
+  syncTokenHash          String?
+  updatedAt              DateTime       @updatedAt
+}
+
+/// Matriz de permissões por papel, editável pelo admin (RN-20).
+model RolePermission {
+  role       Role
+  permission String
+
+  @@id([role, permission])
+}
+
+/// Integração com a hospedagem de código, usada para validar repositórios e ler specs.
+model SourceIntegration {
+  type      SourceProviderType @id
+  enabled   Boolean            @default(true)
+  /// GitLab/Bitbucket próprios ou servidor Git genérico.
+  baseUrl   String?
+  /// Token só de leitura, cifrado.
+  tokenEnc  String?
+  /// Segredo do webhook de push, cifrado. O valor em claro só aparece quando é gerado.
+  webhookSecretEnc String?
+  updatedAt DateTime           @updatedAt
+}
+
+/// SMTP da instalação. Uma linha, ou nenhuma quando o envio está desligado.
+model MailSettings {
+  id            String   @id @default("singleton")
+  host          String
+  port          Int
+  /// TLS implícito (porta 465). Falso usa a conexão simples e STARTTLS quando o servidor oferece.
+  secure        Boolean  @default(false)
+  user          String?
+  passwordEnc   String?
+  fromAddress   String
+  /// Origem dos links de convite e de nova senha. Sem barra no final.
+  publicBaseUrl String
+  updatedAt     DateTime @updatedAt
+}
+
+model AuthProvider {
+  type            AuthProviderType @id
+  enabled         Boolean          @default(true)
+  clientId        String?
+  clientSecretEnc String?
+  /// OIDC genérico e GitLab próprio: URL do emissor/instância.
+  issuer          String?
+  /// Microsoft Entra ID: diretório (tenant) aceito.
+  tenantId        String?
+  /// Rótulo do botão (OIDC genérico, ex.: "Keycloak").
+  label           String?
+  /// E-mail e senha: permite que a pessoa crie a conta e peça acesso.
+  allowSignup     Boolean          @default(false)
+  updatedAt       DateTime         @updatedAt
+}
+
+model Environment {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  name           String
+  /// Padrões de branch (glob): "main", "release/*", "feature/**".
+  branchPatterns String[]
+  color          String    @default("#5b6b70")
+  isProduction   Boolean   @default(false)
+  position       Int       @default(0)
+  /// Branch lida quando a spec vem de arquivo no repositório.
+  syncBranch     String?
+  createdAt      DateTime  @default(now())
+  specs          ApiSpec[]
+  envVars        ServiceEnvVar[]
+  endpoints      ResourceEndpoint[]
+  channelAddresses ChannelAddress[]
+}
+
+// ─── Auth.js ────────────────────────────────────────────────────────────
+
+model User {
+  id                    String       @id @default(cuid())
+  name                  String?
+  email                 String?      @unique
+  emailVerified         DateTime?
+  image                 String?
+  githubId              Int?         @unique
+  githubLogin           String?      @unique
+  role                  Role         @default(VIEWER)
+  status                UserStatus   @default(PENDING)
+  statusReason          String?
+  accessGrant           AccessGrant?
+  accessExpiresAt       DateTime?
+  isOrgMember           Boolean      @default(false)
+  lastMembershipCheckAt DateTime?
+  lastSeenAt            DateTime?
+  /// E-mail e senha (scrypt). Nulo para quem só entra por provedor externo.
+  passwordHash          String?
+  failedLogins          Int          @default(0)
+  lockedUntil           DateTime?
+  /// Incrementar derruba todas as sessões (JWT) da pessoa.
+  tokenVersion          Int          @default(0)
+  /// Tour guiado obrigatório: índice da próxima tela em getMandatoryTourRoutes(); tourCompletedAt nulo = ainda obrigatório.
+  tourStep              Int          @default(0)
+  tourCompletedAt       DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  accounts        Account[]
+  teams           TeamMember[]
+  accessRequests  AccessRequest[] @relation("requester")
+  decidedRequests AccessRequest[] @relation("decider")
+  auditLogs       AuditLog[]
+  createdTokens   ServiceToken[]
+  invites         UserInvite[]
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+// ─── Acesso ─────────────────────────────────────────────────────────────
+
+/// Convite ou redefinição de senha (login por e-mail). Só o hash do token fica salvo.
+model UserInvite {
+  id          String     @id @default(cuid())
+  kind        InviteKind @default(INVITE)
+  email       String
+  name        String?
+  role        Role       @default(VIEWER)
+  tokenHash   String     @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  createdBy   User?      @relation(fields: [createdById], references: [id])
+
+  @@index([email])
+}
+
+model AccessRequest {
+  id           String              @id @default(cuid())
+  userId       String
+  status       AccessRequestStatus @default(PENDING)
+  reason       String?
+  isOrgMember  Boolean             @default(false)
+  decidedById  String?
+  decidedAt    DateTime?
+  decisionNote String?
+  grantedRole  Role?
+  expiresAt    DateTime
+  createdAt    DateTime            @default(now())
+
+  user      User  @relation("requester", fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User? @relation("decider", fields: [decidedById], references: [id])
+
+  @@index([status, createdAt])
+}
+
+// ─── Times ──────────────────────────────────────────────────────────────
+
+model Team {
+  id             String       @id @default(cuid())
+  slug           String       @unique
+  name           String
+  description    String?
+  githubTeamSlug String?
+  createdAt      DateTime     @default(now())
+  members        TeamMember[]
+  services       Service[]
+}
+
+model TeamMember {
+  teamId    String
+  userId    String
+  role      TeamRole @default(MEMBER)
+  createdAt DateTime @default(now())
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+}
+
+// ─── Catálogo ───────────────────────────────────────────────────────────
+
+model Service {
+  id             String     @id @default(cuid())
+  slug           String     @unique
+  name           String
+  description    String?
+  ownerTeamId    String?
+  visibility     Visibility @default(ORG)
+  lifecycle      String     @default("production")
+  kind           ServiceKind @default(API)
+  tags           String[]
+  specSource     SpecSource @default(CI_PUSH)
+  /// URL da spec; "{env}" é trocado pelo slug do ambiente.
+  pullUrl        String?
+  /// Cabeçalhos da requisição (JSON cifrado), ex.: Authorization.
+  pullHeadersEnc String?
+  /// Repositório e caminho do arquivo quando specSource = REPO_FILE.
+  specRepositoryId String?
+  specPath       String?
+  lastSyncAt     DateTime?
+  lastSyncError  String?
+  /// Hashes dos arquivos já sincronizados e conflitos esperando decisão.
+  repoSync       Json?
+  archivedAt     DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  ownerTeam    Team?               @relation(fields: [ownerTeamId], references: [id], onDelete: SetNull)
+  repositories ServiceRepository[]
+  specs        ApiSpec[]
+  tokens       ServiceToken[]
+  outgoing     ServiceDependency[] @relation("from")
+  incoming     ServiceDependency[] @relation("to")
+  envVars      ServiceEnvVar[]
+  resources    ServiceResource[]
+  docs         ServiceDoc[]
+  operations   SpecOperation[]
+  channels     ServiceChannel[]
+  callsOut     OperationCall[] @relation("caller")
+  callsIn      OperationCall[] @relation("callee")
+}
+
+model Repository {
+  id            String              @id @default(cuid())
+  provider      SourceProviderType  @default(GITHUB)
+  /// Id no provedor (GitHub/GitLab).
+  externalId    String?
+  fullName      String              @unique
+  url           String
+  defaultBranch String              @default("main")
+  description   String?
+  createdAt     DateTime            @default(now())
+  services      ServiceRepository[]
+  outgoing      RepositoryLink[]    @relation("from")
+  incoming      RepositoryLink[]    @relation("to")
+}
+
+model ServiceRepository {
+  serviceId    String
+  repositoryId String
+  role         ServiceRepoRole @default(SOURCE)
+  service      Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  repository   Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@id([serviceId, repositoryId])
+}
+
+model RepositoryLink {
+  id          String     @id @default(cuid())
+  fromRepoId  String
+  toRepoId    String
+  kind        LinkKind
+  note        String?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  from        Repository @relation("from", fields: [fromRepoId], references: [id], onDelete: Cascade)
+  to          Repository @relation("to", fields: [toRepoId], references: [id], onDelete: Cascade)
+
+  @@unique([fromRepoId, toRepoId, kind])
+}
+
+model ServiceDependency {
+  id            String   @id @default(cuid())
+  fromServiceId String
+  toServiceId   String
+  kind          LinkKind
+  protocol      ChannelProtocol?
+  note          String?
+  detected      Boolean  @default(false)
+  createdById   String?
+  createdAt     DateTime @default(now())
+  from          Service  @relation("from", fields: [fromServiceId], references: [id], onDelete: Cascade)
+  to            Service  @relation("to", fields: [toServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([fromServiceId, toServiceId, kind])
+}
+
+model ApiSpec {
+  id        String     @id @default(cuid())
+  serviceId String
+  version   String
+  format    String
+  title     String?
+  content   String
+  checksum  String
+  sizeBytes Int
+  commitSha String?
+  branch    String?
+  source        SpecSource
+  isLatest      Boolean     @default(true)
+  environmentId String
+  /// Resumo do diff contra a versão anterior do mesmo ambiente. Null na primeira publicação.
+  changeSummary Json?
+  createdAt     DateTime    @default(now())
+  service       Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Restrict)
+
+  @@unique([serviceId, environmentId, checksum])
+  @@index([serviceId, environmentId, isLatest])
+}
+
+/// Path e método da spec atual de cada ambiente, para a busca do catálogo não reler o documento.
+model SpecOperation {
+  serviceId     String
+  environmentId String
+  method        String
+  path          String
+  deprecated    Boolean @default(false)
+  service       Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([serviceId, environmentId, method, path])
+  @@index([path])
+}
+
+model ServiceChannel {
+  id        String          @id @default(cuid())
+  serviceId String
+  protocol  ChannelProtocol
+  name      String
+  service   Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  addresses ChannelAddress[]
+
+  @@unique([serviceId, protocol, name])
+}
+
+model ChannelAddress {
+  channelId     String
+  environmentId String
+  value         String
+  channel       ServiceChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  environment   Environment    @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@id([channelId, environmentId])
+}
+
+model OperationCall {
+  id            String  @id @default(cuid())
+  fromServiceId String
+  toServiceId   String
+  method        String
+  path          String
+  from          Service @relation("caller", fields: [fromServiceId], references: [id], onDelete: Cascade)
+  to            Service @relation("callee", fields: [toServiceId], references: [id], onDelete: Cascade)
+
+  @@unique([fromServiceId, toServiceId, method, path])
+}
+
+// ─── Variáveis, integrações externas e documentação ─────────────────────
+
+model ServiceEnvVar {
+  id            String      @id @default(cuid())
+  serviceId     String
+  environmentId String
+  key           String
+  /// Valor em texto quando não é segredo.
+  value         String?
+  /// Valor cifrado (AES-256-GCM) quando é segredo.
+  valueEnc      String?
+  isSecret      Boolean     @default(false)
+  /// Markdown.
+  description   String?
+  updatedById   String?
+  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime    @default(now())
+  service       Service     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, environmentId, key])
+}
+
+/// Recurso fora do hub: API de terceiro, fila, tópico, webhook, banco etc. Compartilhável entre serviços.
+model ExternalResource {
+  id          String             @id @default(cuid())
+  slug        String             @unique
+  name        String
+  kind        ResourceKind
+  provider    String?
+  /// Markdown.
+  description String?
+  docsUrl     String?
+  createdAt   DateTime           @default(now())
+  endpoints   ResourceEndpoint[]
+  services    ServiceResource[]
+}
+
+/// Endereço do recurso em cada ambiente (URL, nome da fila, ARN...).
+model ResourceEndpoint {
+  resourceId    String
+  environmentId String
+  value         String
+  resource      ExternalResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  environment   Environment      @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@id([resourceId, environmentId])
+}
+
+model ServiceResource {
+  id          String           @id @default(cuid())
+  serviceId   String
+  resourceId  String
+  relation    ResourceRelation
+  /// Markdown.
+  note        String?
+  createdById String?
+  createdAt   DateTime         @default(now())
+  service     Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  resource    ExternalResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, resourceId, relation])
+}
+
+/// Páginas em Markdown do serviço: regras de negócio, funcionamento, pontos de atenção.
+model ServiceDoc {
+  id          String   @id @default(cuid())
+  serviceId   String
+  slug        String
+  title       String
+  content     String   @default("")
+  position    Int      @default(0)
+  updatedById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, slug])
+}
+
+model ServiceToken {
+  id          String    @id @default(cuid())
+  serviceId   String
+  name        String
+  prefix      String
+  hash        String    @unique
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation(fields: [createdById], references: [id])
+}
+
+// ─── Auditoria ──────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([action])
+}

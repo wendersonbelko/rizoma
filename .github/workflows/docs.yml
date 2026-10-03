@@ -1,0 +1,47 @@
+# Publica a documentação (docs/, VitePress) no GitHub Pages a cada push na main que mexa nela.
+# Uma vez só: Settings → Pages → Build and deployment → Source: "GitHub Actions".
+name: docs
+on:
+  push:
+    branches: [main]
+    paths: ["docs/**", ".github/workflows/docs.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 } # "Atualizado em" de cada página vem do histórico do git
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: actions/configure-pages@v5
+      - run: pnpm install --frozen-lockfile --filter @api-hub/docs
+      - name: Build da documentação
+        run: pnpm docs:build
+        env:
+          # Links do GitHub e caminho do site (https://<dono>.github.io/<repo>/) a partir do próprio repositório.
+          # Com domínio próprio, defina DOCS_BASE: "/".
+          DOCS_REPO: ${{ github.repository }}
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: docs/.vitepress/dist }
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

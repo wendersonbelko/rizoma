@@ -1,0 +1,16 @@
+---
+description: Reply in Brazilian Portuguese. Keep code identifiers in English.
+alwaysApply: true
+---
+
+# Language
+
+Reply to the user in Brazilian Portuguese (pt-BR). These instruction files stay in English.
+
+- Chat replies, PR text, and commit descriptions are pt-BR.
+- Code identifiers are English: file names, folders, variables, functions, types, route segments, query keys, setup step ids, audit action names, and commit scopes.
+- User-visible product copy is pt-BR: labels, empty states, validation messages, and errors a person reads.
+- Code comments are pt-BR and explain why. Cite the business-rule code when one exists (`RN-30`).
+- Docs under `docs/` are pt-BR. Routes and code identifiers quoted inside them stay English.
+
+The rest of the project patterns live in `AGENTS.md` files. Read the one next to the code you change (`apps/web`, `packages/core`, `packages/db`, `docs`) before editing that area. Keep this file and the Language section of the root `AGENTS.md` the same.

@@ -1,0 +1,19 @@
+node_modules
+.next
+dist
+.turbo
+.env
+.env.*
+!.env.example
+coverage
+*.log
+*.tsbuildinfo
+next-env.d.ts
+docs/.vitepress/cache
+docs/.vitepress/dist
+brag-output*
+
+# Skills de agentes instaladas localmente (terceiros, licença própria)
+.agents/skills/
+.claude/skills/
+skills-lock.json

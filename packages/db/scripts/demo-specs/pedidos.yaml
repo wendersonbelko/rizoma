@@ -1,0 +1,101 @@
+openapi: 3.1.0
+info:
+  title: Pedidos API
+  version: 2.4.0
+  description: |
+    Criação e acompanhamento de pedidos do checkout. Todas as rotas exigem token de serviço
+    no cabeçalho `Authorization`.
+servers:
+  - url: https://pedidos.hml.acme.internal
+    description: Homologação
+x-api-hub:
+  dependsOn: [estoque, pagamentos, frete]
+tags:
+  - name: Pedidos
+  - name: Itens
+paths:
+  /pedidos:
+    get:
+      tags: [Pedidos]
+      summary: Lista pedidos
+      parameters:
+        - { name: status, in: query, schema: { $ref: "#/components/schemas/StatusPedido" } }
+        - { name: clienteId, in: query, schema: { type: string } }
+        - { name: pagina, in: query, schema: { type: integer, default: 1 } }
+      responses:
+        "200":
+          description: Página de pedidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  itens: { type: array, items: { $ref: "#/components/schemas/Pedido" } }
+                  total: { type: integer }
+    post:
+      tags: [Pedidos]
+      summary: Cria um pedido
+      description: Reserva o estoque, calcula o frete e deixa o pedido aguardando pagamento.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NovoPedido" }
+      responses:
+        "201": { description: Pedido criado, content: { application/json: { schema: { $ref: "#/components/schemas/Pedido" } } } }
+        "409": { description: Item sem estoque }
+        "422": { description: Dados inválidos }
+  /pedidos/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Pedidos]
+      summary: Detalha um pedido
+      responses:
+        "200": { description: Pedido, content: { application/json: { schema: { $ref: "#/components/schemas/Pedido" } } } }
+        "404": { description: Não encontrado }
+    delete:
+      tags: [Pedidos]
+      summary: Cancela um pedido
+      description: Só pedidos ainda não enviados podem ser cancelados. Libera o estoque e estorna o pagamento.
+      responses:
+        "204": { description: Cancelado }
+        "409": { description: Pedido já enviado }
+  /pedidos/{id}/itens:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Itens]
+      summary: Adiciona item
+      requestBody:
+        content: { application/json: { schema: { $ref: "#/components/schemas/Item" } } }
+      responses:
+        "201": { description: Item adicionado }
+components:
+  schemas:
+    StatusPedido:
+      type: string
+      enum: [AGUARDANDO_PAGAMENTO, PAGO, ENVIADO, ENTREGUE, CANCELADO]
+    Item:
+      type: object
+      required: [sku, quantidade]
+      properties:
+        sku: { type: string, example: "CAM-AZ-M" }
+        quantidade: { type: integer, minimum: 1, example: 2 }
+        precoUnitario: { type: number, example: 89.9 }
+    NovoPedido:
+      type: object
+      required: [clienteId, itens, cep]
+      properties:
+        clienteId: { type: string }
+        cep: { type: string, example: "01310-100" }
+        itens: { type: array, items: { $ref: "#/components/schemas/Item" } }
+    Pedido:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        status: { $ref: "#/components/schemas/StatusPedido" }
+        itens: { type: array, items: { $ref: "#/components/schemas/Item" } }
+        frete: { type: number, example: 19.9 }
+        total: { type: number, example: 199.7 }
+        criadoEm: { type: string, format: date-time }

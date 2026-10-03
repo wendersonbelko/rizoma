@@ -1,0 +1,36 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: apihub
+          POSTGRES_PASSWORD: apihub
+          POSTGRES_DB: apihub_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U apihub"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://apihub:apihub@localhost:5432/apihub_test
+      TEST_DATABASE_URL: postgresql://apihub:apihub@localhost:5432/apihub_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @api-hub/db generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Migrações (as mesmas de produção)
+        run: pnpm db:deploy
+      - name: Testes de integração
+        run: pnpm test:integration

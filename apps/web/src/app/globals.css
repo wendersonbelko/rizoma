@@ -1,0 +1,224 @@
+@import "tailwindcss";
+
+/*
+  Direção visual: fundo frio, painel branco e verdete nas ações.
+  Âmbar só para o que espera decisão. Os valores espelham o tema Claro em packages/core/src/themes.ts.
+*/
+@theme {
+  --color-paper: #f4f7f5;
+  --color-sheet: #ffffff;
+  --color-ink: #16242c;
+  --color-muted: #5b6b70;
+  --color-line: #e2e8e4;
+  --color-accent: #0f7a68;
+  --color-accent-ink: #e8f4f1;
+  --color-wait: #8f5c0c;
+  --color-danger: #b3261e;
+  /* Fundo de campos de formulário e tabelas: branco nos temas claros, papel nos escuros. */
+  --color-field: #ffffff;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-code), ui-monospace, monospace;
+  --radius-panel: 16px;
+  --radius-control: 10px;
+}
+
+html { background: var(--color-paper); color: var(--color-ink); }
+body { font-family: var(--font-sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+h1, h2 { letter-spacing: -0.02em; }
+::selection { background: color-mix(in srgb, var(--color-accent) 28%, transparent); }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: none; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Markdown (regras de negócio, notas, descrições) */
+.md { line-height: 1.65; overflow-wrap: anywhere; }
+.md > * + * { margin-top: 0.85em; }
+.md h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.01em; }
+.md h2 { font-size: 1.2rem; font-weight: 650; margin-top: 1.6em; padding-bottom: 0.3em; border-bottom: 1px solid var(--color-line); }
+.md h3 { font-size: 1.05rem; font-weight: 650; margin-top: 1.3em; }
+.md ul { list-style: disc; padding-left: 1.4em; }
+.md ol { list-style: decimal; padding-left: 1.4em; }
+.md li + li { margin-top: 0.25em; }
+.md a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
+.md code { font-family: var(--font-mono); font-size: 0.88em; background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 4px; padding: 0.05em 0.3em; }
+.md pre { background: var(--color-paper); border: 1px solid var(--color-line); border-radius: 6px; padding: 0.8em 1em; overflow-x: auto; }
+.md pre code { border: 0; padding: 0; background: none; }
+.md blockquote { border-left: 3px solid var(--color-wait); padding-left: 0.9em; color: var(--color-muted); }
+.md table { border-collapse: collapse; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--color-line); padding: 0.35em 0.7em; text-align: left; }
+.md th { background: var(--color-paper); font-weight: 600; }
+.md input[type="checkbox"] { margin-right: 0.4em; accent-color: var(--color-accent); }
+.md-compact { font-size: 0.925rem; }
+.md-compact > * + * { margin-top: 0.4em; }
+.md li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.3em; }
+
+/*
+  Tour guiado (driver.js, botão "?" flutuante). O driver.css padrão usa branco/cinza fixos;
+  aqui tudo passa a seguir o tema ativo (Aparência), inclusive em runtime, porque lê as mesmas
+  variáveis --color-*. popoverClass: "hub-tour" é passado em TourProvider.tsx.
+*/
+.driver-popover.hub-tour {
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-panel);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--color-ink) 22%, transparent);
+  font-family: var(--font-sans);
+  max-width: 360px;
+  padding: 16px 18px;
+}
+.driver-popover.hub-tour .driver-popover-title { font: 650 1rem/1.35 var(--font-sans); color: var(--color-ink); }
+.driver-popover.hub-tour .driver-popover-description { font: 400 0.9rem/1.55 var(--font-sans); color: var(--color-muted); margin-top: 6px; }
+.driver-popover.hub-tour .driver-popover-progress-text { color: var(--color-muted); font-size: 0.8rem; }
+.driver-popover.hub-tour .driver-popover-footer { margin-top: 14px; gap: 8px; }
+.driver-popover.hub-tour .driver-popover-footer button {
+  text-shadow: none;
+  font: 500 13px/1.2 var(--font-sans);
+  padding: 6px 12px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-line);
+  background: var(--color-sheet);
+  color: var(--color-ink);
+}
+.driver-popover.hub-tour .driver-popover-footer button:hover { border-color: var(--color-ink); }
+.driver-popover.hub-tour .driver-popover-footer .driver-popover-next-btn { background: var(--color-accent); color: var(--color-accent-ink); border-color: var(--color-accent); }
+.driver-popover.hub-tour .driver-popover-footer .driver-popover-next-btn:hover { filter: brightness(1.1); }
+.driver-popover.hub-tour .driver-popover-footer .driver-popover-btn-disabled { opacity: 0.4; }
+.driver-popover.hub-tour .driver-popover-close-btn { color: var(--color-muted); }
+.driver-popover.hub-tour .driver-popover-close-btn:hover { color: var(--color-ink); }
+.driver-popover.hub-tour button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* A lib pinta as 4 bordas da seta de branco e deixa 3 lados transparentes; recolorimos o visível. */
+.driver-popover.hub-tour .driver-popover-arrow-side-left { border-left-color: var(--color-sheet); }
+.driver-popover.hub-tour .driver-popover-arrow-side-right { border-right-color: var(--color-sheet); }
+.driver-popover.hub-tour .driver-popover-arrow-side-top { border-top-color: var(--color-sheet); }
+.driver-popover.hub-tour .driver-popover-arrow-side-bottom { border-bottom-color: var(--color-sheet); }
+
+/* Controles de zoom do mapa: o reset do Tailwind deixa o painel branco e os botões sem tamanho. */
+.hub-graph .react-flow__node { background: transparent; border: none; box-shadow: none; padding: 0; }
+.hub-graph .react-flow__controls {
+  overflow: hidden;
+  border: 1px solid var(--color-line) !important;
+  border-radius: 12px;
+  box-shadow: none !important;
+}
+.hub-graph .react-flow__controls-button {
+  width: 28px !important;
+  height: 28px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--color-line) !important;
+  background: var(--color-sheet) !important;
+  fill: var(--color-ink);
+}
+.hub-graph .react-flow__controls-button:hover { background: var(--color-paper) !important; }
+.hub-graph .react-flow__controls-button svg { fill: var(--color-ink) !important; max-width: 14px; max-height: 14px; }
+.hub-graph .react-flow__attribution { display: none; }
+.hub-graph .react-flow__edge-path { stroke-width: 1.4; }
+
+/* O diálogo nativo rola sozinho. Aqui ele cabe no conteúdo: formulário longo vira passos, não barra. */
+dialog.hub-modal {
+  margin: auto;
+  max-height: none;
+  overflow: visible;
+  width: min(36rem, calc(100% - 2rem));
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  padding: 0;
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--color-ink) 28%, transparent);
+}
+dialog.hub-modal.hub-modal-wide { width: min(42rem, calc(100% - 2rem)); }
+.hub-modal::backdrop { background: color-mix(in srgb, var(--color-ink) 45%, transparent); }
+.hub-modal:focus { outline: none; }
+
+/* O Scalar entra só no endpoint escolhido: sem introdução, busca nem vão de página inteira. */
+.hub-api {
+  --scalar-background-1: var(--color-sheet);
+  --scalar-background-2: var(--color-paper);
+  --scalar-background-3: var(--color-field);
+  --scalar-color-1: var(--color-ink);
+  --scalar-color-2: var(--color-muted);
+  --scalar-color-3: var(--color-muted);
+  --scalar-border-color: var(--color-line);
+  --scalar-color-accent: var(--color-accent);
+}
+.hub-api .scalar-api-reference,
+.hub-api .references-layout,
+.hub-api .scalar-api-reference.references-classic,
+.hub-api .section {
+  min-height: 0 !important;
+  background: transparent !important;
+}
+.hub-api .section { padding: 8px 0 20px !important; }
+.hub-api .section-container { padding-inline: 20px !important; border-top: 0 !important; }
+.hub-api .references-classic-header-container,
+.hub-api .introduction-section .section-header,
+.hub-api .introduction-section .start,
+.hub-api .scalar-reference-intro-server,
+.hub-api .scalar-reference-intro-auth { display: none !important; }
+
+/* Parâmetros, corpo, resposta e exemplo, um embaixo do outro. */
+.hub-api .endpoint-content,
+.hub-api .operation-layout,
+.hub-api .section-columns,
+.hub-api .section-content--with-columns,
+.hub-api .message-layout,
+.hub-api .operation-details-card {
+  display: flex !important;
+  flex-direction: column !important;
+  grid-template-columns: none !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+.hub-api .endpoint-content > *,
+.hub-api .operation-example-card,
+.hub-api .request-card,
+.hub-api .section-column {
+  width: 100% !important;
+  max-width: none !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+/* A escolha de linguagem fica no card do exemplo, não numa faixa solta. */
+.hub-api .scalar-reference-intro-clients { display: none !important; }
+.hub-api .request-card {
+  overflow: hidden;
+  border: 1px solid var(--color-line) !important;
+  border-radius: 12px !important;
+  background: var(--color-field) !important;
+}
+.hub-api .request-card .scalar-card-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  min-height: 44px;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid var(--color-line) !important;
+  background: var(--color-paper) !important;
+}
+.hub-api .request-card .scalar-card-header-title { display: flex; align-items: center; gap: 8px; }
+.hub-api [data-testid="client-picker"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  height: 32px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border: 1px solid var(--color-line) !important;
+  border-radius: 999px !important;
+  background: var(--color-sheet) !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+}
+.hub-api [data-testid="client-picker"] svg { width: 12px; height: 12px; color: var(--color-muted); }
+.hub-api .operation-example-card {
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  overflow: hidden;
+}

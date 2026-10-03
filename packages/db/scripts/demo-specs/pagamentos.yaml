@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info: { title: Pagamentos API, version: 1.8.2, description: Cobranças por cartão e Pix, estornos e webhooks de confirmação. }
+x-api-hub: { dependsOn: [notificacoes] }
+paths:
+  /cobrancas:
+    post:
+      summary: Cria cobrança
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pedidoId, valor, metodo]
+              properties:
+                pedidoId: { type: string }
+                valor: { type: number }
+                metodo: { type: string, enum: [CARTAO, PIX] }
+      responses: { "201": { description: Cobrança criada } }
+  /cobrancas/{id}:
+    get:
+      summary: Consulta cobrança
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: Cobrança } }
+  /cobrancas/{id}/estorno:
+    post:
+      summary: Estorna cobrança
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "202": { description: Estorno solicitado } }

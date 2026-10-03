@@ -1,0 +1,6 @@
+# Quebra de linha LF no repositório e na cópia de trabalho: hooks do husky, scripts e Docker rodam em Linux.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff2 binary

@@ -1,0 +1,7 @@
+openapi: 3.1.0
+info: { title: Notificações, version: 1.2.0 }
+paths:
+  /mensagens:
+    post: { summary: Envia e-mail, SMS ou push, responses: { "202": { description: Enfileirada } } }
+  /modelos:
+    get: { summary: Lista modelos de mensagem, responses: { "200": { description: Modelos } } }

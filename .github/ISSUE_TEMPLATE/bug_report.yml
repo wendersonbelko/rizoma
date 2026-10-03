@@ -1,0 +1,61 @@
+name: Bug
+description: Algo não funciona como a documentação diz.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Obrigado por reportar. Falha de segurança **não** entra aqui: use o [reporte privado](https://github.com/wendersonbelko/rizoma/security/advisories/new).
+        Antes de abrir, procure nas issues existentes e na [solução de problemas](https://wendersonbelko.github.io/rizoma/referencia/solucao-de-problemas).
+  - type: input
+    id: version
+    attributes:
+      label: Versão ou commit
+      placeholder: "v0.3.0 ou 1a2b3c4"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Forma de instalação
+      options:
+        - Docker Compose
+        - pnpm dev (desenvolvimento local)
+        - Outra (descreva abaixo)
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: O mínimo necessário para ver o problema, com a tela ou a rota envolvida.
+      placeholder: |
+        1. Abra Pessoas e acesso
+        2. Clique em Convidar usuário
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que você esperava
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: O que aconteceu
+      description: Mensagem de erro, status HTTP, print. Não cole `.env`, tokens nem dados de clientes.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Saída do servidor ou do console do navegador, se houver.
+      render: text
+  - type: input
+    id: environment
+    attributes:
+      label: Ambiente
+      placeholder: "Ubuntu 24.04, Docker 27, PostgreSQL 16, Chrome 140"
