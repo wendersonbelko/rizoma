@@ -1,10 +1,10 @@
 ---
-description: Como entrar no Rizoma pela primeira vez, o que acontece conforme o seu vínculo com a empresa, convites, redefinição de senha, o tour guiado obrigatório, o botão "?" e o menu lateral.
+description: Como entrar no Rizoma pela primeira vez, o que acontece conforme o seu vínculo com a empresa, convites, redefinição de senha, o tour guiado obrigatório, o botão "?", o menu lateral em quatro grupos, a busca Ctrl+K e o menu da conta com o tema Claro, Escuro ou Sistema.
 ---
 
 # Primeiro acesso e tour
 
-Esta página mostra o caminho de quem abre o Rizoma pela primeira vez: a tela de login, o que o hub faz conforme o seu vínculo com a empresa, como usar um convite ou um link de nova senha, o tour guiado que você precisa concluir e o menu lateral. É para qualquer pessoa que vai usar o hub no dia a dia.
+Esta página mostra o caminho de quem abre o Rizoma pela primeira vez: a tela de login, o que o hub faz conforme o seu vínculo com a empresa, como usar um convite ou um link de nova senha, o tour guiado que você precisa concluir, o menu lateral, a busca rápida e o menu da conta. É para qualquer pessoa que vai usar o hub no dia a dia.
 
 ## A tela de login
 
@@ -56,7 +56,7 @@ O hub decide o seu acesso a cada login, e de novo a cada poucas horas de uso (o 
 flowchart TD
     A["Login concluído no provedor"] --> B{"Comprova vínculo com a empresa?"}
     B -- "Sim" --> C{"Liberação automática ligada?"}
-    C -- "Sim" --> D["Entra direto como VIEWER"]
+    C -- "Sim" --> D["Entra direto como Leitor"]
     C -- "Não" --> E["Fica pendente em /pending"]
     B -- "Não" --> F{"Política para quem não comprova"}
     F -- "Pedir acesso" --> E
@@ -67,7 +67,7 @@ O que comprova vínculo depende do provedor: GitHub pela organização, Google, 
 
 | Situação | O que você vê |
 |---|---|
-| Vínculo comprovado e liberação automática ligada | Você entra direto no Catálogo com o papel VIEWER. |
+| Vínculo comprovado e liberação automática ligada | Você entra direto no Catálogo com o papel Leitor. |
 | Sem liberação automática, ou sem vínculo com a política "pedir acesso" | Você cai em `/pending`, aguardando decisão de um administrador. |
 | Sem vínculo com a política "bloquear" | O login é recusado. Convites e acessos aprovados manualmente continuam valendo. |
 | Perdeu o vínculo depois de entrar (por exemplo, saiu da organização) | Você é suspenso. Se o vínculo voltar, a suspensão automática some sozinha. |
@@ -133,17 +133,23 @@ Depois de 5 senhas erradas seguidas, a conta fica bloqueada por 15 minutos.
 
 ## O tour guiado obrigatório
 
-No primeiro acesso, o hub abre um **tour obrigatório** no Catálogo. Ele não percorre as outras telas: mostra o menu inteiro, a parte de consulta, a parte de administração (se o seu papel a tiver) e a interrogação. Enquanto você não concluir, o hub o leva de volta ao Catálogo, mesmo que você digite outro endereço. Só **Sair** continua funcionando.
+No primeiro acesso, o hub abre um **tour obrigatório** no Catálogo. É um panorama único: ele mostra o menu, a busca, o botão **+ Novo** e a interrogação, mas não entra em cada tela. Enquanto você não concluir, o hub o leva de volta ao Catálogo, mesmo que você digite outro endereço. Durante o tour, a busca, o **+ Novo** e o botão **?** ficam desligados.
 
 Os passos são:
 
-1. Uma frase de boas-vindas, sem destacar nada.
-2. O **menu completo**, com o que o seu papel pode abrir.
-3. O grupo **Catálogo**: documentação, mapa e integrações.
-4. O grupo **Administração**, quando ele existe no seu menu.
-5. A **interrogação**, no canto da tela. Toda tela tem esse botão para ensinar a usar aquele lugar.
+1. **Bem-vindo**: uma frase de apresentação, sem destacar nada.
+2. **Menu completo**: tudo o que o seu papel pode abrir. O que não aparece na lista, você não usa.
+3. **Explorar**: Catálogo, Mapa de ligações e Integrações externas.
+4. **Cadastros**: Serviços, Repositórios, Vínculos, Tokens de CI e Times.
+5. **Pessoas**: Pessoas e acesso e Permissões.
+6. **Sistema**: Auditoria e Configurações.
+7. **Buscar**: o atalho Ctrl+K (⌘K no Mac), que funciona em qualquer tela.
+8. **Novo**: os atalhos para criar serviço, vínculo, token de CI, integração, time e convite.
+9. **Interrogação**: o botão **?** que ensina cada tela.
 
-Use **Próximo →** e **← Anterior**. No último passo, o botão é **Concluir tour**. Clicar fora, apertar Esc ou mexer na página não fecha o tour. Se você fechar o navegador no meio, ele continua de onde parou.
+Um passo cujo elemento não está na tela é pulado. Quem só consulta, por exemplo, não vê os grupos **Cadastros**, **Pessoas** e **Sistema** nem o botão **+ Novo**, e o tour segue sem eles.
+
+Use **Próximo →** e **← Anterior**. No último passo, o botão é **Concluir tour**. Clicar fora, apertar Esc ou mexer na página não fecha o tour. O hub só guarda o progresso quando você conclui: se fechar o navegador no meio, o panorama recomeça do primeiro passo no próximo acesso.
 
 Ao concluir, o hub mostra "Tour concluído! Use o botão "?" em qualquer tela para rever." A conclusão fica na [Auditoria](/admin/auditoria).
 
@@ -151,19 +157,19 @@ O botão **?** de cada tela abre o tour daquela tela, sob demanda. Esses tours n
 
 | Tela | O que o tour mostra |
 |---|---|
-| **Catálogo** | Busca, lista de serviços e a sua conta |
-| **Mapa de ligações** | Mapa ou lista, filtros, navegação, novo vínculo e print |
+| **Catálogo** | Busca, filtros, lista de serviços e a sua conta |
+| **Mapa de ligações** | Mapa ou lista, foco, alcance, tipos, navegação, legenda, novo vínculo e print |
 | **Integrações externas** | O que é uma integração, filtro por tipo e a lista |
-| **Serviços e repositórios** | Abas, serviços que você mantém e novo serviço |
-| **Times** | Novo time, busca e a lista (o clique abre as pessoas) |
-| **Pessoas e acesso** | Pedidos, convite, pessoas e histórico |
+| **Serviços** | Os seus serviços, o botão de novo serviço e a lista |
+| **Repositórios** | O que a tela mostra, o botão de novo repositório e a lista |
+| **Vínculos** | O que é um vínculo, o botão de novo vínculo e a lista |
+| **Tokens de CI** | Para que serve o token, o botão de novo token e os tokens ativos |
+| **Times** | Novo time, busca e filtros e a lista (o clique abre as pessoas) |
+| **Pessoas e acesso** | Solicitações de acesso, convite, pessoas e histórico |
+| **Permissões** | Matriz, regras fixas, grupos e mudanças, restaurar o padrão |
 | **Auditoria** | Filtros, registros e exportar |
-| **Permissões** | Matriz, regras fixas, salvar ou restaurar |
-| **Aparência** | Nome, tema, paleta, prévia e salvar |
-| **Configurações** | Sobre a instalação, seções e o conteúdo da seção |
+| **Configurações** | Sobre a instalação, as abas e o conteúdo da aba |
 | **Página do serviço** | Cabeçalho, ambiente e as abas |
-
-Um passo cujo elemento não está na tela (por exemplo, Administração para quem só consulta) é pulado.
 
 ## O botão "?"
 
@@ -177,22 +183,50 @@ Algumas telas ainda não têm tour próprio, como a edição de um serviço e o 
 
 ## O menu lateral
 
-O menu fica à esquerda e mostra só o que você pode usar. No topo aparecem o nome da empresa e o título do sistema; clicar neles leva ao Catálogo. Os itens se dividem em dois grupos:
+O menu fica à esquerda e mostra só o que você pode usar. No topo aparecem o nome da empresa e o título do sistema; clicar neles leva ao Catálogo. Logo abaixo ficam o botão **Buscar** e o botão **+ Novo** (veja a próxima seção). Os itens se dividem em quatro grupos, e cada item tem o mesmo nome da página que ele abre:
 
 | Grupo | Itens | Quem vê |
 |---|---|---|
-| **Catálogo** | **Catálogo**, **Mapa de ligações**, **Integrações externas** | Todo mundo. O mapa exige a permissão de ver o mapa, que os papéis padrão têm. |
-| **Administração** | **Serviços e repositórios**, **Times**, **Pessoas e acesso**, **Auditoria**, **Permissões**, **Aparência**, **Configurações** | Só quem tem a permissão de cada tela. Veja a [visão geral da administração](/admin/). |
+| **Explorar** | **Catálogo**, **Mapa de ligações**, **Integrações externas** | Todo mundo. O mapa exige a permissão de ver o mapa, que os papéis padrão têm. |
+| **Cadastros** | **Serviços**, **Repositórios**, **Vínculos**, **Tokens de CI**, **Times** | Só quem tem a permissão de cada tela. |
+| **Pessoas** | **Pessoas e acesso**, **Permissões** | Só quem administra o acesso. |
+| **Sistema** | **Auditoria**, **Configurações** | Só quem tem a permissão de cada tela. |
+
+Quem não tem a permissão de uma tela não vê o item no menu e, se digitar o endereço, recebe "não encontrada". Um grupo sem nenhum item visível para você não aparece. Veja a [visão geral da administração](/admin/).
 
 Alguns detalhes:
 
 - O item da tela atual fica destacado. **Catálogo** continua destacado quando você está dentro de um serviço.
-- **Pessoas e acesso** mostra um número quando há pedidos de acesso aguardando decisão.
-- Em telas estreitas, como no celular, o menu vira uma barra horizontal no topo, sem os rótulos de grupo.
+- **Pessoas e acesso** mostra um número quando há solicitações de acesso aguardando decisão.
+- Os endereços antigos continuam funcionando: `/admin/catalog` (que tinha abas de serviços, repositórios, vínculos e tokens) leva à página nova correspondente, e `/admin/appearance` leva à aba **Aparência** de **Configurações**.
+- Em telas estreitas, como no celular, o menu vira uma barra horizontal, sem os rótulos de grupo.
 
-### Menu da conta
+## Buscar e criar rápido (Ctrl+K)
 
-Na parte de baixo do menu (ou logo abaixo do topo, no celular) fica a sua conta: foto, `@usuario` do GitHub ou e-mail, e o seu papel de acesso, escrito em minúsculas (por exemplo, `viewer`). Clique em **Sair** para encerrar a sessão. O papel só muda pela tela [Pessoas e acesso](/admin/pessoas-e-acesso), e ninguém altera o próprio papel.
+O botão **Buscar**, no topo do menu lateral, abre a busca global. O atalho é **Ctrl+K** (**⌘K** no Mac) e funciona em qualquer tela, inclusive para fechar a busca. Ele não abre por cima de outro formulário aberto, e a busca fica desligada durante o tour.
+
+Digite no campo "Buscar serviço, tela ou ação…". Os resultados aparecem em até três seções:
+
+| Seção | O que lista |
+|---|---|
+| **Ir para** | Os itens do menu que você pode abrir. |
+| **Serviços** | Serviços achados pelo nome, pelo slug, pela descrição ou por um endpoint, como `GET /pedidos`. A busca de serviços começa a partir de 2 letras e vale a mesma visibilidade do Catálogo (RN-30). |
+| **Criar** | Novo serviço, Novo repositório, Novo vínculo, Gerar token de CI, Nova integração, Novo time e Convidar pessoa, só os que você tem permissão de criar. |
+
+Use **↑** e **↓** para trocar de item, **Enter** para abrir e **Esc** para fechar. Em **Ir para** e **Criar**, a busca ignora acentos e maiúsculas, então "integracao" acha **Nova integração**.
+
+O botão **+ Novo**, ao lado da busca, abre um menu com os mesmos atalhos de **Criar**. Cada atalho leva à tela do cadastro e já abre o formulário dele. Se você não pode criar nada, o botão não aparece.
+
+## Menu da conta e tema (Claro, Escuro, Sistema)
+
+Na parte de baixo do menu fica a sua conta: foto (ou a inicial do nome), nome (ou `@usuario` do GitHub, ou e-mail, se o nome não existir) e o seu papel, escrito em português: **Proprietário**, **Administrador**, **Mantenedor** ou **Leitor**. O papel só muda pela tela [Pessoas e acesso](/admin/pessoas-e-acesso), e ninguém altera o próprio papel.
+
+Clique na conta para abrir o menu, com duas coisas:
+
+- **Aparência**, com três opções: **Claro**, **Escuro** e **Sistema**. A troca vale na hora e fica gravada para você, então vale em qualquer navegador em que você entrar. **Sistema** segue o modo claro ou escuro do seu computador ou celular.
+- **Sair**, que encerra a sessão.
+
+O tema é uma escolha de cada pessoa: mudar o seu não muda o de ninguém. Quem administra o hub define só a marca, que é o nome do sistema e a cor de destaque, na aba **Aparência** de [Configurações](/admin/configuracoes). Veja também [Aparência](/admin/aparencia).
 
 ## Próximos passos
 

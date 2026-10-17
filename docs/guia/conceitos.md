@@ -29,9 +29,11 @@ O **serviço** é o centro. Ele pertence a um **time**, tem **versões da spec**
 
 ## Instalação e organização
 
-Cada hub tem uma única **instalação**: a configuração da empresa que o usa. Ela guarda o nome da empresa, um identificador curto (por exemplo, `acme`), o título do sistema, o que conta como vínculo com a empresa, as regras de acesso e a aparência.
+Cada hub tem uma única **instalação**: a configuração da empresa que o usa. Ela guarda o nome da empresa, um identificador curto (por exemplo, `acme`), o nome do sistema e a cor de destaque (a marca), o que conta como vínculo com a empresa e as regras de acesso.
 
 Você define tudo isso no [assistente de instalação](/instalacao/assistente) e edita depois em [Configurações](/admin/configuracoes). O identificador é a única exceção: não muda depois da instalação, porque aparece em logs e integrações.
+
+O **tema** (Claro, Escuro ou Sistema) não faz parte da instalação: cada pessoa escolhe o seu, no menu do avatar, e a escolha vale só para ela. A instalação define apenas a marca. Veja [Aparência](/admin/aparencia).
 
 ## Vínculo com a empresa
 
@@ -53,15 +55,15 @@ Uma **pessoa** é identificada pelo usuário do GitHub ou pelo e-mail. Ela tem u
 
 | Status na tela | Significado |
 |---|---|
-| aguardando | Entrou, mas ainda não foi liberada. Vê a tela de pedido de acesso. |
+| aguardando | Entrou, mas ainda não foi liberada. Vê a tela de solicitação de acesso. |
 | ativo | Pode usar o hub, conforme o papel. |
 | suspenso | Perdeu o vínculo, teve o prazo vencido ou foi suspensa por um administrador. |
-| recusado | O pedido foi recusado. Só um administrador reabre. |
+| recusado | A solicitação foi recusada. Só um administrador reabre. |
 
 ```mermaid
 flowchart TD
   L["Login"] --> V{"Comprova vínculo?"}
-  V -->|"sim, com liberação automática"| A["ATIVO como VIEWER"]
+  V -->|"sim, com liberação automática"| A["ATIVO como Leitor"]
   V -->|"sim, sem liberação automática"| P["AGUARDANDO"]
   V -->|"não"| O{"Política"}
   O -->|"pedir acesso"| P
@@ -74,20 +76,20 @@ flowchart TD
 
 Pontos importantes:
 
-- **Pedido de acesso.** Enquanto espera, a pessoa pode escrever quem é e por que precisa de acesso (de 10 a 500 caracteres). O pedido expira em N dias (padrão 14) e ela pode entrar de novo para abrir outro.
+- **Solicitação de acesso.** Enquanto espera, a pessoa pode escrever quem é e por que precisa de acesso (de 10 a 500 caracteres). A solicitação expira em N dias (padrão 14) e ela pode entrar de novo para abrir outra.
 - **Acesso com prazo.** Quem aprova pode dar um prazo, útil para consultorias. Vencido o prazo, a pessoa é suspensa.
 - **Suspensão automática** por perda de vínculo é desfeita sozinha quando a pessoa volta a comprovar o vínculo. Suspensão feita por um administrador, só ele desfaz.
 - **Sessão.** É um token assinado (JWT) com um contador de versão. Suspender, trocar a senha ou usar **Encerrar todas as sessões** invalida as sessões na próxima requisição.
 
 ## Papel e permissão
 
-O **papel** de uma pessoa define o que ela pode fazer. Existem quatro: **OWNER**, **ADMIN**, **MAINTAINER** e **VIEWER**.
+O **papel** de uma pessoa define o que ela pode fazer. Existem quatro, e as telas mostram o nome em português: **Proprietário** (`OWNER`), **Administrador** (`ADMIN`), **Mantenedor** (`MAINTAINER`) e **Leitor** (`VIEWER`). Os códigos entre parênteses aparecem só em textos técnicos, como a linha de comando e o banco.
 
-Uma **permissão** é uma ação específica, como `envvars:reveal` (revelar segredos) ou `audit:read` (ver a auditoria). Há 21 permissões. Cada papel tem um conjunto delas, que a pessoa administradora edita em **Permissões**.
+Uma **permissão** é uma ação específica, como `envvars:reveal` (revelar segredos) ou `audit:read` (ver a auditoria). Há 21 permissões. Cada papel tem um conjunto delas, que a pessoa administradora edita em **Permissões** (veja [Permissões](/admin/permissoes)).
 
-- O **OWNER** sempre tem tudo, e o hub nunca fica sem pelo menos um.
+- O **Proprietário** sempre tem tudo, e o hub nunca fica sem pelo menos um.
 - Ver o catálogo (`catalog:read`) é obrigatório para todos os papéis.
-- As permissões administrativas só podem ir para o ADMIN (e o OWNER as tem sempre).
+- As permissões administrativas só podem ir para o Administrador (e o Proprietário as tem sempre).
 - Ninguém altera o próprio papel.
 
 Uma regra que confunde no início é a de **próprio time**: sem `service:edit_any`, a pessoa só cria e edita os serviços do time de que participa. Veja [Papéis e permissões](/referencia/permissoes).
@@ -106,11 +108,13 @@ Um time não tem permissões próprias. As permissões vêm do papel de cada pes
 
 O **serviço** é a unidade do catálogo: uma API, com sua documentação, seu dono e suas ligações.
 
-- **Slug.** Identificador único do serviço, com letras minúsculas, números e hífen (2 a 63 caracteres). Aparece na URL (`/services/pedidos-api`) e nas dependências declaradas na spec. Depois que o serviço publica a primeira spec, o slug fica congelado.
+- **Slug (o endereço do serviço).** Identificador único, com letras minúsculas, números e hífen (2 a 63 caracteres). Nas telas aparece como texto pequeno abaixo do nome (`/services/pedidos-api · editar endereço`), é gerado a partir do nome e também entra nas dependências declaradas na spec. Depois que o serviço publica a primeira spec, o slug fica congelado.
 - **Time responsável.** No máximo um. Quem não tem `service:edit_any` só cadastra serviços para os seus times.
 - **Visibilidade.** **Toda a empresa** (qualquer pessoa ativa com `catalog:read`) ou **Só o time responsável** (o time e quem tem `catalog:read_private`). Serviços restritos não aparecem no catálogo, no mapa nem por URL direta.
+- **Tipo.** **API**, **Frontend** ou **Worker**. A API publica contrato HTTP; frontend e worker entram no mapa pelos vínculos.
 - **Situação.** **Experimental**, **Em produção** ou **Descontinuado**. Informativa: o descontinuado aparece destacado.
 - **Tags.** Até 10 palavras livres, usadas para filtrar o catálogo.
+- **Rascunho.** Criar um serviço pede só nome, time e tipo. Enquanto faltar algo (vincular o repositório, escolher como a spec chega, gerar o token de CI), a página dele mostra o selo **Rascunho** e uma checklist de próximos passos para quem o gerencia. O serviço já aparece no catálogo.
 - **Arquivado.** Sai do catálogo e do mapa, e todos os tokens são revogados. O histórico de specs é mantido. Restaurar não reativa os tokens.
 
 ## Spec e versão
@@ -143,20 +147,20 @@ A **origem** diz de onde o hub obtém a spec de um serviço. Cada serviço escol
 
 | Origem | Quando usar |
 |---|---|
-| **CI envia** (padrão) | O pipeline publica a cada deploy. É a forma recomendada. |
+| **Enviada pelo CI** (padrão) | O pipeline publica a cada deploy. É a forma recomendada. |
 | **Arquivo no repositório** | A spec vive no repositório e o hub a lê na branch de leitura de cada ambiente. |
-| **URL** | O serviço já expõe a spec numa URL interna. Um `{env}` na URL vira o identificador do ambiente. |
+| **Lida de uma URL** | O serviço já expõe a spec numa URL interna. Um `{env}` na URL vira o identificador do ambiente. |
 | **Importação manual** | Serviço legado ou spec avulsa, enviada pela tela. |
 
 Veja [Publicar pelo GitHub Actions](/receitas/publicar-pelo-github-actions) e [Ler a spec de uma URL](/receitas/spec-por-url).
 
-## Token de publicação
+## Token de CI (token de publicação)
 
-O **token de publicação** é a credencial que o pipeline usa para enviar a spec de **um** serviço. Ele começa com `ahub_` e é mostrado uma única vez, ao ser criado. O hub guarda só o hash (SHA-256). Tem validade de 1 a 365 dias e pode ser revogado a qualquer momento. Um token só publica no serviço a que pertence. Veja a [API HTTP](/referencia/api).
+O **token de CI**, também chamado de token de publicação, é a credencial que o pipeline usa para enviar a spec de **um** serviço. Ele começa com `ahub_` e é mostrado uma única vez, ao ser criado. O hub guarda só o hash (SHA-256). Tem validade de 1 a 365 dias e pode ser revogado a qualquer momento. Um token só publica no serviço a que pertence. Veja a [API HTTP](/referencia/api).
 
 ## Repositório
 
-Um **repositório** é um projeto de código no GitHub, GitLab ou Bitbucket (ou "Outro", informando a URL). Cadastrá-lo permite ligá-lo aos serviços com um **papel**: código-fonte, SDK cliente, infraestrutura ou contrato. Repositórios também se ligam entre si. Para cadastrar um repositório de um provedor, o token da integração precisa enxergá-lo.
+Um **repositório** é um projeto de código no GitHub, GitLab ou Bitbucket (ou "Outro", informando a URL). Você o cadastra na página **Repositórios** e o liga aos serviços na página **Vínculos**, com um **papel**: código-fonte, SDK cliente, infraestrutura ou contrato. Repositórios também se ligam entre si. Para cadastrar um repositório de um provedor, o token da integração precisa enxergá-lo.
 
 ## Vínculo (ligação)
 
@@ -166,7 +170,7 @@ Um **vínculo** registra que uma coisa se relaciona com outra. Eles alimentam o 
 - **Serviço para repositório:** código-fonte, SDK cliente, infraestrutura, contrato.
 - **Repositório para repositório:** os mesmos tipos entre serviços.
 
-Um item não se liga a ele mesmo, e a mesma ligação não se repete. Você cria vínculos em **Serviços e repositórios** (o **+** do mapa abre essa mesma tela) ou declarando `x-api-hub.dependsOn` na spec (essas ligações ficam marcadas como "declarado na spec"). Não confunda com o "vínculo com a empresa", que trata de pessoas.
+Um item não se liga a ele mesmo, e a mesma ligação não se repete. Você cria vínculos na página **Vínculos** do menu (o **+ Vínculo** do mapa abre o mesmo formulário) ou declarando `x-api-hub.dependsOn` na spec (essas ligações ficam marcadas como "Declarado na spec"). Não confunda com o "vínculo com a empresa", que trata de pessoas.
 
 ## Integração externa e endereço por ambiente
 

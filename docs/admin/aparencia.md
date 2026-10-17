@@ -1,112 +1,91 @@
 ---
-description: "A tela Aparência do Rizoma: título do sistema, os temas claro e escuro, a paleta de nove cores com checagem de contraste, a prévia e como salvar para todo mundo."
+description: "A aba Aparência de Configurações: o nome do sistema e a cor de destaque (a marca), com prévia nos dois temas, e o tema Claro, Escuro ou Sistema que cada pessoa escolhe no menu do avatar."
 ---
 
 # Aparência
 
-Na tela **Aparência** você dá a cara da sua empresa ao Rizoma: escolhe o título do sistema, o tema claro ou o escuro e, se quiser, ajusta cada uma das nove cores. As cores são as mesmas da documentação. Esta página é para quem administra o hub.
+A **Aparência** tem duas partes. A **marca** (o nome do sistema e a cor de destaque) é igual para todas as pessoas e é definida por quem administra, na aba **Aparência** de [Configurações](/admin/configuracoes). O **tema** (Claro, Escuro ou Sistema) é escolha de cada pessoa, no menu do avatar. Esta página explica as duas.
 
 ## Para que serve
 
-O título e as cores aparecem para todo mundo que usa o hub: no menu, no login, na aba do navegador, nos convites e até no mapa e no tour guiado. Trocar de tema não muda nenhuma função, só a aparência. O hub também protege a legibilidade: combinações de cor que ficariam difíceis de ler são recusadas antes de salvar.
+O nome e a cor aparecem para todo mundo que usa o hub: no menu, no login, na aba do navegador, nos convites e até no mapa e no tour guiado. Trocar a cor não muda nenhuma função, só a aparência. O hub também protege a legibilidade: uma cor que deixaria links e botões difíceis de ler é recusada antes de salvar.
+
+Já o tema é uma preferência pessoal: quem prefere o escuro usa o escuro, sem mudar nada para os colegas.
 
 ## Quem vê
 
-O item **Aparência** do menu abre `/admin/appearance`. A tela exige a permissão de mudar título e tema do sistema, que ADMIN e OWNER têm por padrão. Quem não a tem recebe "não encontrada".
+A aba **Aparência** fica dentro de **Configurações** (`/admin/settings?s=appearance`), no grupo **Sistema** do menu. Ela exige a permissão de mudar a marca do sistema, que o Administrador e o Proprietário têm por padrão. Quem tem só essa permissão (sem a de configurações) abre **Configurações** e vê apenas esta aba. Quem não a tem recebe "não encontrada".
 
-## O que aparece na tela
+O endereço antigo `/admin/appearance`, de quando a Aparência era uma tela própria do menu, redireciona para a aba.
 
-O título da página é **Aparência**, com a frase "Título do sistema, tema e cores. Vale para todas as pessoas." Em telas largas, a tela se divide em duas partes: à esquerda, o editor (título, tema, paleta e o botão de salvar); à direita, a **prévia**, que acompanha a rolagem.
+Já o tema pessoal não pede permissão nenhuma: toda pessoa ativa escolhe o dela.
 
-### Título
+## O tema de cada pessoa
 
-A seção **Título** tem um campo, **Nome do sistema**, de 2 a 40 caracteres. Ele aparece "no topo do menu, na aba do navegador, no login e nos convites" (RN-111). O padrão é "Rizoma".
+O hub tem dois temas, **Claro** e **Escuro**, e a opção **Sistema**, que segue o que o seu computador ou celular pede. Quem escolhe é você, no **menu do avatar**, no pé da barra lateral:
 
-### Tema
+1. Clique no seu avatar (o bloco com o seu nome e o seu papel).
+2. No pop-over, em **Aparência**, escolha **Claro**, **Escuro** ou **Sistema**.
 
-A seção **Tema** mostra dois cartões, cada um com uma miniatura das cores. Clique num cartão para escolher o tema; o cartão selecionado ganha uma borda de destaque.
+A troca vale na hora, sem recarregar a página. A escolha fica guardada na sua conta, então vale em qualquer aparelho em que você entrar, e também num cookie do navegador (`rizoma-theme`), para a página já abrir no tema certo, sem piscar. Se o hub não conseguir salvar, o seletor volta ao tema anterior e avisa. A escolha de tema não entra na [Auditoria](/admin/auditoria), porque não muda nada para mais ninguém. O mesmo pop-over tem o botão **Sair**.
 
-| Tema | Descrição |
-|---|---|
-| **Claro** | Cinza-sálvia e verdete, o mesmo da documentação. É o padrão. |
-| **Escuro** | O verdete da documentação sobre fundo grafite. |
+O leitor da documentação da API (Scalar) segue o seu tema: escuro quando você está no tema Escuro, claro quando está no Claro.
 
-Ao escolher um tema, a paleta abaixo volta às cores dele, descartando os ajustes que você tinha feito.
+## A marca (aba Aparência)
 
-### Paleta de cores
+A aba tem o aviso "Nome do sistema e cor de destaque, iguais para todas as pessoas. Claro, Escuro ou Sistema cada pessoa escolhe no próprio menu, no pé do menu lateral." Em telas largas, o editor fica à esquerda e a **Prévia** à direita.
 
-A seção **Paleta de cores** oferece um seletor de cor para cada uma das nove cores do tema, com o código hexadecimal ao lado (por exemplo, `#0f7a68`):
+### Nome do sistema
 
-| Cor | Onde é usada |
-|---|---|
-| **Fundo** | O fundo geral das páginas. |
-| **Painéis** | Cartões, tabelas, formulários e o menu ativo. |
-| **Texto** | O texto principal. |
-| **Texto secundário** | Descrições, contagens e textos de apoio. |
-| **Bordas** | Linhas e divisórias. |
-| **Destaque (botões e links)** | Botões, links e itens ativos. |
-| **Texto sobre o destaque** | O texto dentro de um botão de destaque. |
-| **Pendências** | Avisos e coisas que pedem atenção, como pedidos aguardando. |
-| **Perigo** | Erros e ações destrutivas. |
+O campo **Nome** tem de 2 a 40 caracteres. Ele aparece "no topo do menu, na aba do navegador, no login e nos convites" (RN-111). O padrão é "Rizoma".
 
-Quando a paleta difere da do tema escolhido, aparece o link **Restaurar cores do tema**, que descarta os ajustes e volta às cores originais.
+### Cor de destaque
+
+A **Cor de destaque** é a cor de botões, links e do item ativo do menu. Você escolhe no seletor de cor ou digita o valor hexadecimal, como `#0f7a68` (aceita colar sem o `#`). Enquanto a cor não for a padrão, aparece o link **Voltar ao verdete padrão**, que restaura `#0f7a68`.
+
+Os dois temas nascem dessa cor. No tema Escuro, o hub clareia a cor sozinho até o texto ficar legível, então você escolhe uma cor só e os dois temas ficam bons.
 
 ### Checagem de contraste
 
-Enquanto você mexe nas cores, o hub confere o contraste entre as combinações que importam para a leitura, seguindo o nível AA das diretrizes de acessibilidade (WCAG): razão mínima de **4,5 para 1** (RN-112). As combinações verificadas são:
-
-- **Texto** sobre **Fundo** e sobre **Painéis**;
-- **Texto secundário** sobre **Painéis** e sobre **Fundo**;
-- **Texto sobre o destaque** sobre **Destaque** (o texto dos botões);
-- **Destaque** sobre **Painéis** e sobre **Fundo** (os links);
-- **Pendências** sobre **Painéis** e sobre **Fundo**;
-- **Perigo** sobre **Painéis**.
-
-Cada combinação abaixo do mínimo entra numa lista em vermelho, com o valor medido, por exemplo "Texto sobre o fundo: contraste 3.2:1, mínimo 4.5:1." Enquanto houver problemas, o botão de salvar fica desabilitado. O servidor repete a checagem ao salvar, então uma combinação ilegível nunca é gravada.
+O hub confere se a cor serve para texto e para botão no tema claro, seguindo o nível AA das diretrizes de acessibilidade (WCAG): razão mínima de **4,5 para 1** contra o fundo e contra os painéis (RN-112). Se a cor for clara demais, aparece, em vermelho, uma mensagem como "Essa cor é clara demais para o tema claro: links e botões ficariam ilegíveis (contraste 3,2:1, o mínimo é 4,5:1). Escolha um tom mais escuro." Um valor que não seja `#rrggbb` também é recusado, com "Use uma cor no formato #rrggbb, por exemplo #0f7a68." O servidor repete a checagem ao salvar, então uma cor ilegível nunca é gravada.
 
 ### Prévia
 
-A **Prévia** mostra, ao vivo, um pedaço de tela com as cores atuais: o menu com o título, um serviço de exemplo, textos secundários, um aviso de pendência, um erro e um botão. Um selo avisa que é "Exemplo, não é um dado real". Nada do que você vê ali é salvo até você clicar em **Salvar aparência**.
+A **Prévia** mostra, ao vivo, um pedaço de tela nos dois temas, lado a lado: o menu com o nome, um serviço de exemplo, um texto secundário, um link, um botão, um aviso de pendência, um erro e um modal. Um selo avisa "Exemplo, não é um dado real". Nada do que você vê ali é salvo até você clicar em **Salvar marca**. Enquanto a cor digitada está incompleta ou ilegível, a prévia mostra a cor padrão em vez de quebrar.
 
 ## O que dá para fazer
 
-### Mudar o título
+### Mudar o nome do sistema
 
-1. No campo **Nome do sistema**, digite o novo nome (até 40 caracteres).
-2. Confira a prévia.
-3. Clique em **Salvar aparência**.
+1. Em **Configurações**, abra a aba **Aparência**.
+2. No campo **Nome**, digite o novo nome (até 40 caracteres).
+3. Confira a prévia.
+4. Na barra **Alterações não salvas**, clique em **Salvar marca**.
 
-### Escolher um tema
+### Mudar a cor de destaque
 
-1. Clique no cartão do tema em **Tema**.
-2. Confira a prévia.
-3. Clique em **Salvar aparência**.
+1. Na aba **Aparência**, em **Cor de destaque**, escolha a cor no seletor ou digite o valor.
+2. Veja o efeito nos dois temas da prévia e confira se não apareceu nenhuma mensagem em vermelho.
+3. Clique em **Salvar marca**.
 
-### Ajustar uma cor
-
-1. Em **Paleta de cores**, clique no quadrado da cor que quer mudar e escolha outra.
-2. Veja o efeito na prévia e confira se a lista de contraste ficou vazia.
-3. Clique em **Salvar aparência**.
-
-Se a lista de contraste apontar problemas, escureça o texto ou clareie o fundo (ou o contrário, nos temas escuros) até o valor passar do mínimo. **Restaurar cores do tema** desfaz tudo e volta ao ponto de partida.
+Se a mensagem apontar que a cor é clara demais, escolha um tom mais escuro. **Voltar ao verdete padrão** desfaz tudo e volta ao ponto de partida.
 
 ### Salvar
 
-O botão **Salvar aparência** fica desabilitado enquanto há problemas de contraste, enquanto o título tem menos de 2 caracteres e durante o salvamento. Ao concluir, o hub responde "Aparência salva para todo mundo." A partir da próxima página que cada pessoa abrir, o hub usa o novo título e as novas cores.
+O botão **Salvar marca** só aparece depois da primeira mudança, numa barra fixa no pé da tela com **Alterações não salvas**, **Descartar** e **Salvar marca**. **Descartar** volta os campos ao que está salvo. Se o nome tem menos de 2 caracteres ou a cor é recusada, a mensagem aparece na própria barra e nada é gravado. Ao concluir, o hub responde "Marca salva para todas as pessoas." A partir da próxima página que cada pessoa abrir, o hub usa o novo nome e a nova cor.
 
 ## Regras importantes
 
-- **Cinco temas, nove cores (RN-110).** Você escolhe um tema pronto e pode sobrescrever qualquer uma das nove cores. O hub guarda o tema e só as cores que diferem dele.
-- **Título de até 40 caracteres (RN-111).** Aparece no menu, na aba do navegador, no login e nos convites.
-- **Contraste mínimo (RN-112).** Combinações ilegíveis são recusadas antes de salvar.
-- **Vale para todo mundo (RN-113).** Não é uma preferência por pessoa, e exige a permissão de mudar o título e o tema.
-- **Leitor de documentação.** O leitor da spec da API é escuro no tema **Escuro** e claro no tema **Claro**, independente das cores ajustadas.
-- **Auditoria.** A mudança fica registrada como "Aparência (tema/paleta) atualizada", com o título e o tema de antes e depois.
+- **Dois temas, uma cor de marca (RN-110).** O tema Claro e o Escuro são fixos; o que a administração escolhe é a cor de destaque, e as duas paletas nascem dela. Não há temas prontos para escolher nem paleta de cores para ajustar. O hub guarda só a cor de destaque da instalação.
+- **Nome de até 40 caracteres (RN-111).** Aparece no menu, na aba do navegador, no login e nos convites.
+- **Contraste mínimo (RN-112).** Uma cor ilegível é recusada antes de salvar.
+- **Marca para todos, tema por pessoa (RN-113).** O nome e a cor valem para todas as pessoas e exigem a permissão de mudar a marca. O tema é de cada pessoa e não exige permissão.
+- **Auditoria.** A mudança da marca fica registrada na [Auditoria](/admin/auditoria) como "atualizou a marca (nome e cor de destaque)", com o nome e a cor de antes e depois.
 
 Veja os códigos completos em [Regras de negócio](/referencia/regras-de-negocio).
 
 ## Próximos passos
 
-- [Configurações](/admin/configuracoes): o nome da empresa e as regras de acesso.
-- [Auditoria](/admin/auditoria): confira quem mudou a aparência.
+- [Configurações](/admin/configuracoes): as outras abas, como organização, conexões e ambientes.
+- [Auditoria](/admin/auditoria): confira quem mudou a marca.
 - [Visão geral](/admin/): as demais telas de administração.

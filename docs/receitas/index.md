@@ -13,7 +13,7 @@ Todas seguem a mesma estrutura, para você saber onde olhar:
 | Seção | O que tem |
 |---|---|
 | **Antes de começar** | Pré-requisitos e as permissões necessárias. |
-| **Passo a passo** | Os passos numerados, com os nomes de menus, abas e botões exatamente como aparecem na tela. |
+| **Passo a passo** | Os passos numerados, com os nomes de menu, páginas, abas e botões exatamente como aparecem na tela. |
 | **Como saber que deu certo** | Um jeito de conferir o resultado. |
 | **Problemas comuns** | Mensagens de erro e situações que costumam travar o cenário. |
 | **Veja também** | Onde aprofundar. |
@@ -48,7 +48,7 @@ Quem mantém serviços e precisa da documentação certa, no ambiente certo.
 
 ## Administro o acesso e quero…
 
-Quem aprova pedidos, convida pessoas e define o que cada papel pode fazer.
+Quem aprova solicitações de acesso, convida pessoas e define o que cada papel pode fazer.
 
 - [Receber uma pessoa nova no time](/receitas/onboarding-de-pessoa-nova): acesso, papel, time, tour guiado e o que mostrar primeiro.
 - [Dar acesso a uma consultoria por tempo limitado](/receitas/acesso-temporario-para-terceiros): aprovar com prazo, restringir o que a pessoa vê e revogar antes do fim.
@@ -59,7 +59,7 @@ Quem aprova pedidos, convida pessoas e define o que cada papel pode fazer.
 
 ## Quero só avaliar…
 
-- [Popular um hub de teste com dados de demonstração](/receitas/dados-de-demonstracao): serviços, times, pessoas, integrações, variáveis e pedidos de acesso de exemplo, para explorar todas as telas.
+- [Popular um hub de teste com dados de demonstração](/receitas/dados-de-demonstracao): serviços, times, pessoas, integrações, variáveis e solicitações de acesso de exemplo, para explorar todas as telas.
 - [Do zero ao primeiro serviço](/receitas/primeiro-servico): o caminho completo com dados seus.
 
 ## Quero… → Receita
@@ -80,7 +80,7 @@ Quem aprova pedidos, convida pessoas e define o que cada papel pode fazer.
 | Registrar uma API de terceiro, fila ou banco | [Cadastrar uma integração externa](/receitas/integracao-externa) | Mantenedor ou administrador |
 | Guardar segredos, baixar o `.env`, copiar entre ambientes | [Segredos, .env e cópia entre ambientes](/receitas/segredos-e-env) | Mantenedor do serviço |
 | Liberar direto quem é da empresa | [Acesso automático para a empresa](/receitas/acesso-automatico-pela-organizacao) | Quem administra o hub |
-| Dar acesso por tempo limitado a terceiros | [Acesso temporário para terceiros](/receitas/acesso-temporario-para-terceiros) | Quem aprova pedidos |
+| Dar acesso por tempo limitado a terceiros | [Acesso temporário para terceiros](/receitas/acesso-temporario-para-terceiros) | Quem aprova solicitações de acesso |
 | Convidar alguém por e-mail e senha | [Convidar por e-mail](/receitas/convidar-por-email) | Quem administra pessoas |
 | Entrar com o Keycloak da empresa | [Login com Keycloak (OIDC)](/receitas/login-com-keycloak) | Quem administra o hub |
 | Criar um papel com menos (ou mais) permissões | [Papel com permissões sob medida](/receitas/papel-personalizado) | Quem edita permissões |

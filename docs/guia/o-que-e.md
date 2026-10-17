@@ -67,7 +67,7 @@ flowchart LR
   HUB -->|"login corporativo"| PESSOAS["Pessoas da empresa"]
 ```
 
-1. **Você cadastra o serviço** e escolhe de onde vem a spec: enviada pelo CI, lida de um arquivo no repositório, lida de uma URL ou importada manualmente.
+1. **Você cadastra o serviço** (nome, time e tipo bastam) e escolhe de onde vem a spec: enviada pelo CI, lida de um arquivo no repositório, lida de uma URL ou importada manualmente.
 2. **O hub descobre o ambiente** pela branch (por exemplo, `main` vira produção e `release/*` vira homologação) e guarda a versão daquele ambiente.
 3. **As pessoas entram** com a conta da empresa. Quem comprova vínculo entra direto; as demais pedem acesso ou entram por convite.
 4. **Cada pessoa vê o que pode ver.** Serviços restritos ao time só aparecem para o time. As ações administrativas ficam na auditoria.

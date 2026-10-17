@@ -69,7 +69,7 @@ Depois disso, as ligações aparecem:
 
 - no [Mapa de ligações](/uso/mapa), como seta de "consome a API de";
 - na aba **Integrações** do serviço, em **Outros serviços do hub**, com o selo **declarado na spec**;
-- em **Serviços e repositórios → Vínculos**, junto com os vínculos manuais.
+- em **Vínculos** (grupo **Cadastros** do menu), com a origem **Declarado na spec**, junto com os vínculos manuais.
 
 ## Regras que valem a pena conhecer
 

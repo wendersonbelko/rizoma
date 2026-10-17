@@ -1,5 +1,5 @@
 ---
-description: As 21 permissões do Rizoma e a matriz padrão de OWNER, ADMIN, MAINTAINER e VIEWER, com as travas que a tela de Permissões não deixa quebrar.
+description: As 21 permissões do Rizoma e a matriz padrão de Proprietário, Administrador, Mantenedor e Leitor, os itens de menu que cada permissão libera e as travas que a tela de Permissões não deixa quebrar.
 ---
 
 # Papéis e permissões
@@ -10,20 +10,24 @@ A checagem acontece no servidor. A interface só esconde botões. Quem não tem 
 
 ## Papéis
 
-| Papel | Na tela | Para quem |
+Na interface, os papéis aparecem sempre pelo nome em português. O código (`OWNER`, `VIEWER`…) fica nos textos técnicos: comandos, banco e API.
+
+| Papel (código) | Na tela | Para quem |
 |---|---|---|
-| `OWNER` | Owner | Quem instalou o hub e quem recebeu o papel de outro OWNER. Sempre tem todas as permissões. A instalação precisa ter pelo menos um. |
-| `ADMIN` | Admin | Administração do dia a dia. Por padrão não muda login, ambientes, repositórios, regras de acesso nem a própria matriz. |
+| `OWNER` | Proprietário | Quem instalou o hub e quem recebeu o papel de outro Proprietário. Sempre tem todas as permissões. A instalação precisa ter pelo menos um. |
+| `ADMIN` | Administrador | Administração do dia a dia. Por padrão não muda login, ambientes, repositórios, regras de acesso nem a própria matriz. |
 | `MAINTAINER` | Mantenedor | Quem mantém os serviços do próprio time: cadastra, edita, publica spec, gera token e cuida de variáveis. |
 | `VIEWER` | Leitor | Quem consulta o catálogo, o mapa e as variáveis (sem ver o valor dos segredos). É o papel de quem entra pela liberação automática. |
 
-Ninguém altera o próprio papel (RN-24). Um ADMIN só concede até MAINTAINER (RN-13). Só um OWNER concede ou retira OWNER, e nunca o último (RN-25).
+Dentro de um time, a pessoa ainda tem um papel à parte, **Líder** ou **Membro**. Ele organiza a lista de [Times](/admin/times), mas não concede permissões.
+
+Ninguém altera o próprio papel (RN-24). Um Administrador só concede até Mantenedor (RN-13). Só um Proprietário concede ou retira o papel de Proprietário, e nunca o último (RN-25).
 
 ## A matriz padrão
 
-Marca significa que o papel nasce com a permissão. `catalog:read` é obrigatória para todos e não pode ser desmarcada. As permissões da área **Administração** só podem ser dadas a ADMIN (o OWNER as tem sempre).
+Marca significa que o papel nasce com a permissão. `catalog:read` é obrigatória para todos e não pode ser desmarcada. As permissões da área **Administração** só podem ser dadas ao Administrador (o Proprietário as tem sempre).
 
-| Permissão | O que permite | Owner | Admin | Mantenedor | Leitor |
+| Permissão | O que permite | Proprietário | Administrador | Mantenedor | Leitor |
 |---|---|---|---|---|---|
 | `catalog:read` | Ver catálogo, documentação e regras de negócio | sim | sim | sim | sim |
 | `catalog:read_private` | Ver serviços restritos de outros times | sim | sim | | |
@@ -40,14 +44,39 @@ Marca significa que o papel nasce com a permissão. `catalog:read` é obrigatór
 | `token:manage` | Gerar e revogar tokens de CI (próprio time) | sim | sim | sim | |
 | `link:edit` | Cadastrar repositórios e integrações externas compartilhadas | sim | sim | sim | |
 | `team:manage` | Criar times e gerenciar membros | sim | sim | | |
-| `access:decide` | Aprovar e recusar pedidos de acesso | sim | sim | | |
+| `access:decide` | Aprovar e recusar solicitações de acesso | sim | sim | | |
 | `user:manage` | Convidar pessoas, mudar papéis e suspender | sim | sim | | |
 | `audit:read` | Ver e exportar a auditoria | sim | sim | | |
-| `appearance:manage` | Mudar título e tema | sim | sim | | |
-| `settings:manage` | Login, ambientes, repositórios e regras de acesso | sim | | | |
+| `appearance:manage` | Mudar o nome do sistema e a cor de destaque (aba Aparência) | sim | sim | | |
+| `settings:manage` | Configurações: organização e regras de acesso, conexões (login, e-mail, repositórios), ambientes e sessões | sim | | | |
 | `roles:manage` | Editar esta matriz | sim | | | |
 
-As cinco últimas, mais `team:manage`, `access:decide`, `user:manage` e `audit:read`, são administrativas: a validação da matriz recusa dá-las a MAINTAINER ou VIEWER (RN-26 a RN-29).
+As sete permissões da área **Administração** (`team:manage`, `access:decide`, `user:manage`, `audit:read`, `appearance:manage`, `settings:manage` e `roles:manage`) são administrativas: a validação da matriz recusa dá-las a Mantenedor ou Leitor (RN-26 a RN-29).
+
+::: info Como a matriz da tela chama algumas permissões
+Na matriz da tela, `access:decide` ainda se chama "Aprovar e recusar pedidos de acesso" e `appearance:manage`, "Mudar título e tema do sistema". As duas descrevem o que a tabela acima diz. O tema Claro, Escuro ou Sistema é escolha de cada pessoa, pelo menu do avatar, e não depende de permissão.
+:::
+
+## Qual permissão abre cada tela
+
+Cada item do menu aparece só para quem tem a permissão da tela. Sem ela, o endereço responde "não encontrada". A lista segue os quatro grupos da barra lateral.
+
+| Grupo | Item do menu | Endereço | Aparece para quem tem |
+|---|---|---|---|
+| Explorar | **Catálogo** | `/` | Todos |
+| Explorar | **Mapa de ligações** | `/graph` | `graph:read` |
+| Explorar | **Integrações externas** | `/integrations` | Todos |
+| Cadastros | **Serviços** | `/admin/services` | `service:create` ou `service:edit` |
+| Cadastros | **Repositórios** | `/admin/repositories` | `link:edit` |
+| Cadastros | **Vínculos** | `/admin/links` | `link:edit` |
+| Cadastros | **Tokens de CI** | `/admin/tokens` | `token:manage` |
+| Cadastros | **Times** | `/admin/teams` | `team:manage` |
+| Pessoas | **Pessoas e acesso** | `/admin/people` | `access:decide` ou `user:manage` |
+| Pessoas | **Permissões** | `/admin/permissions` | `roles:manage` |
+| Sistema | **Auditoria** | `/admin/audit` | `audit:read` |
+| Sistema | **Configurações** | `/admin/settings` | `settings:manage` (abas **Organização e acesso**, **Conexões** e **Ambientes e sessões**) ou `appearance:manage` (aba **Aparência**) |
+
+Quem tem só `appearance:manage` abre **Configurações**, mas vê apenas a aba **Aparência**. Dentro de **Pessoas e acesso**, decidir solicitações pede `access:decide`, e convidar, mudar papéis, suspender e gerar link de nova senha pedem `user:manage`. A busca (Ctrl+K ou ⌘K) e o botão **+ Novo** mostram só os atalhos que a pessoa pode usar.
 
 ## Próprio time
 
@@ -61,15 +90,15 @@ Sem `service:edit_any`, criar e editar um serviço exige a permissão correspond
 
 ## O que a tela não deixa fazer
 
-- Tirar permissão do OWNER. A coluna é somente leitura.
+- Tirar permissão do Proprietário. A coluna é somente leitura.
 - Desmarcar `catalog:read`.
-- Dar permissão administrativa a Mantenedor ou Leitor.
-- Um ADMIN remover do próprio papel a permissão de editar a matriz, se a tiver recebido.
+- Dar permissão administrativa a Mantenedor ou Leitor. Nessas colunas, a linha mostra só um traço (—).
+- Um Administrador remover do próprio papel a permissão de editar a matriz, se a tiver recebido.
 
-Salvar grava a matriz inteira de uma vez e registra a mudança na [auditoria](/admin/auditoria). Quem já personalizou a matriz não recebe permissões novas automaticamente: é preciso marcá-las na tela, a menos que uma migração faça isso.
+Marcar e desmarcar não grava nada: as mudanças ficam numa barra no rodapé ("N mudanças não salvas"), e **Revisar e salvar** mostra quem ganha e quem perde cada permissão antes de gravar. Salvar grava a matriz inteira de uma vez e registra a mudança na [auditoria](/admin/auditoria). Quem já personalizou a matriz não recebe permissões novas automaticamente: é preciso marcá-las na tela, a menos que uma migração faça isso.
 
 ## Veja também
 
-- [Permissões (tela)](/admin/permissoes): como salvar e restaurar o padrão.
+- [Permissões (tela)](/admin/permissoes): como revisar, salvar e restaurar o padrão.
 - [Papel com permissões sob medida](/receitas/papel-personalizado): um cenário completo.
 - [Criar uma permissão](/contribuindo/guias/nova-permissao): para quem mexe no código.

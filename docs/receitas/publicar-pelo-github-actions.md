@@ -11,8 +11,8 @@ Esta receita configura um workflow do GitHub Actions que envia a spec OpenAPI do
 ## Antes de começar
 
 - O serviço já está cadastrado no hub. Se não estiver, veja [Do zero ao primeiro serviço](/receitas/primeiro-servico).
-- Você tem `token:manage` e é do time responsável pelo serviço (ou tem `service:edit_any`). Com os papéis padrão, MAINTAINER, ADMIN e OWNER têm.
-- Os ambientes e as regras de branch estão configurados em **Configurações → Ambientes**. Quem publica sem informar o ambiente depende dessas regras. Veja [Ambientes por branch](/receitas/ambientes-por-branch).
+- Você tem `token:manage` e é do time responsável pelo serviço (ou tem `service:edit_any`). Com os papéis padrão, Mantenedor, Administrador e Proprietário têm.
+- Os ambientes e as regras de branch estão configurados em **Configurações → Ambientes e sessões**. Quem publica sem informar o ambiente depende dessas regras. Veja [Ambientes por branch](/receitas/ambientes-por-branch).
 - O runner do GitHub alcança o hub pela rede. Se o hub só abre na rede interna, use um runner self-hosted dentro dela.
 - A spec do serviço existe como arquivo (`openapi.yaml` ou `openapi.json`) ou pode ser gerada no build (passo 4).
 
@@ -24,11 +24,11 @@ Um token vale para um serviço só. Num repositório com vários serviços, crie
 
 ### 1. Gere o token de publicação
 
-1. No hub, abra **Serviços e repositórios → Tokens**.
-2. Clique em **Novo token**, escolha o **Serviço**, informe um **Nome** (`github-actions`) e a **Validade (dias)**, de 1 a 365.
-3. Clique em **Gerar token** e copie o valor (`ahub_...`). Ele só aparece uma vez.
+1. No hub, abra **Tokens de CI** (grupo **Cadastros** do menu). Se você está na página do serviço, o botão **Gerar** do passo **Gerar token de CI** abre o mesmo modal, já com o serviço escolhido.
+2. Clique em **Novo token**, escolha o **Serviço** (o campo começa vazio) e informe o **Nome do token** (`github-actions`). A **Validade (dias)**, de 1 a 365, fica em **Detalhes opcionais**; o padrão é 90.
+3. Clique em **Gerar token**, depois em **Copiar token**. O valor (`ahub_...`) só aparece uma vez, nesse modal.
 
-Quando o token vencer, o CI passa a receber 401. A tabela **Tokens ativos** destaca o vencimento quando faltam menos de 14 dias: gere um novo antes disso e troque o segredo.
+Quando o token vencer, o CI passa a receber 401. A coluna **Expira** da lista de **Tokens de CI** destaca a data quando faltam menos de 14 dias: gere um novo antes disso e troque o segredo.
 
 ### 2. Guarde o token e a URL no GitHub
 
@@ -210,7 +210,7 @@ flowchart TD
   D -->|"não"| F["ambiente de produção"]
 ```
 
-Com estes ambientes em **Configurações → Ambientes** (exemplo):
+Com estes ambientes em **Configurações → Ambientes e sessões** (exemplo):
 
 | Ambiente | Regras de branch |
 |---|---|
@@ -279,7 +279,7 @@ x-api-hub:
   dependsOn: [estoque-api, pagamentos-api]
 ```
 
-Cada slug vira uma ligação **consome a API de**, marcada como **declarado na spec**. Slugs que não existem no hub, ou o do próprio serviço, voltam na resposta em `unknownDependencies` (o workflow do passo 3 mostra um aviso). As ligações só são criadas quando a publicação gera uma versão nova. Tirar um slug da lista não apaga a ligação já criada: remova-a em **Serviços e repositórios → Vínculos**.
+Cada slug vira uma ligação **consome a API de**, marcada como **declarado na spec**. Slugs que não existem no hub, ou o do próprio serviço, voltam na resposta em `unknownDependencies` (o workflow do passo 3 mostra um aviso). As ligações só são criadas quando a publicação gera uma versão nova. Tirar um slug da lista não apaga a ligação já criada: remova-a em **Vínculos** (clique em **Remover**; dá para desfazer logo em seguida).
 
 Numa spec gerada, adicione a extensão na exportação. No NestJS, depois de `createDocument`: `Object.assign(document, { 'x-api-hub': { dependsOn: ['estoque-api'] } })`. No FastAPI: `schema = app.openapi(); schema["x-api-hub"] = {"dependsOn": ["estoque-api"]}`. Em outros casos, pós-processe o JSON, por exemplo com `jq '. + {"x-api-hub": {"dependsOn": ["estoque-api"]}}' openapi.json`. Detalhes em [Extensão x-api-hub](/referencia/extensao-x-api-hub) e [Mapear dependências](/receitas/mapear-dependencias).
 
@@ -298,16 +298,16 @@ O log do passo mostra a resposta do hub. Estes são os resultados possíveis:
 
 Depois de um 201:
 
-- No hub, o **Catálogo** mostra o selo do ambiente com a versão nova.
+- No hub, o **Catálogo** mostra a pílula do ambiente, na coluna **Ambientes**, com a versão nova.
 - Na aba **Documentação da API** do serviço, a versão aparece com o marcador de atual. Passe o mouse sobre ela para ver data, origem e branch.
-- Em **Serviços e repositórios → Tokens**, o **Último uso** do token é atualizado.
-- Em **Auditoria**, o grupo **Publicação de specs** registra `Spec publicada pelo CI em prod (v2.4.0)`. Abra o registro para ver o prefixo do token, a branch e o commit. Respostas `unchanged` não geram evento.
+- Em **Tokens de CI**, o **Último uso** do token é atualizado.
+- Em **Auditoria**, o grupo **Publicação de specs** registra a publicação pelo CI, com o ambiente e a versão. Abra o registro para ver o prefixo do token, a branch e o commit. Respostas `unchanged` não geram evento.
 
 Exemplo de resposta 422 quando a branch não tem ambiente:
 
 ```json
 {
-  "error": "A branch \"experimento/x\" não corresponde a nenhum ambiente. Informe \"environment\" ou ajuste as regras em Configurações → Ambientes.",
+  "error": "A branch \"experimento/x\" não corresponde a nenhum ambiente. Informe \"environment\" ou ajuste as regras em Configurações → Ambientes e sessões.",
   "environments": [
     { "slug": "dev", "branches": ["develop", "feature/**"] },
     { "slug": "hml", "branches": ["release/*", "homolog"] },
@@ -321,15 +321,15 @@ Exemplo de resposta 422 quando a branch não tem ambiente:
 | Sintoma | O que fazer |
 |---|---|
 | 401 `Token ausente.` | O segredo `API_HUB_TOKEN` não existe ou está vazio. Segredos não chegam a workflows disparados por pull requests de forks: publique só em `push`. |
-| 401 com token inválido, revogado ou expirado | Gere outro token em **Serviços e repositórios → Tokens** e atualize o segredo. Arquivar o serviço revoga todos os tokens dele. |
-| 422 dizendo que a branch não corresponde a nenhum ambiente | Ajuste as regras em **Configurações → Ambientes** (exige `settings:manage`) ou informe `environment`. |
+| 401 com token inválido, revogado ou expirado | Gere outro token em **Tokens de CI** e atualize o segredo. Arquivar o serviço revoga todos os tokens dele. |
+| 422 dizendo que a branch não corresponde a nenhum ambiente | Ajuste as regras em **Configurações → Ambientes e sessões** (exige `settings:manage`) ou informe `environment`. |
 | 422 `Corpo inválido` | O arquivo foi enviado com `Content-Type: application/json`. Use `application/yaml` para o arquivo cru. |
 | 422 com erro de leitura da spec | A spec não é OpenAPI 3.0/3.1 nem Swagger 2.0, ou não tem `info` e `paths`, `webhooks` ou `components`. Rode o `lint` localmente. |
 | `curl: (22)` sem explicação | Falta `--fail-with-body`, ou a resposta não foi impressa. Use o trecho do passo 3. |
 | `curl: (3)` ou erro de URL sem endereço | A variável `API_HUB_URL` não existe. Ela precisa estar na aba **Variables**, não em **Secrets**, porque o workflow a lê com `vars`. |
 | Timeout ou conexão recusada | O runner não alcança o hub. Use um runner na rede interna. |
 | A spec não aparece no ambiente esperado | Confira o seletor de ambiente na página do serviço: a versão pode ter caído em outro. A resposta do `curl` traz `environment`. |
-| Aviso de origem diferente na aba **Documentação da API** | A origem configurada do serviço não é **CI envia**. Veja [Importar a spec manualmente](/receitas/importar-spec-manualmente). |
+| Aviso "Esta versão não veio…" na aba **Documentação da API** | A versão chegou pelo CI, mas a origem configurada do serviço não é **Enviada pelo CI**. Clique em **Ver origem** e, se o CI é o caminho certo, escolha **Enviada pelo CI** em **Editar serviço**. Veja [Importar a spec manualmente](/receitas/importar-spec-manualmente). |
 | 429 | Mais de 30 publicações por minuto com o mesmo token. Confira se há um laço no pipeline. |
 
 ## Veja também

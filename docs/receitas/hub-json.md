@@ -9,7 +9,7 @@ O `hub.json` na raiz do repositório de código-fonte é a fonte da verdade das 
 ## Antes de começar
 
 - O repositório está ligado ao sistema com o papel **Código-fonte**.
-- A integração do provedor está em **Configurações → Repositórios**, com token de leitura.
+- A integração do provedor está em **Configurações → Conexões** (bloco **Repositórios**), com token de leitura.
 - Para o hub gravar o arquivo sozinho, esse token também precisa poder escrever. Senha e token não entram no arquivo.
 
 ## Passo a passo
@@ -26,17 +26,17 @@ O `hub.json` na raiz do repositório de código-fonte é a fonte da verdade das 
 }
 ```
 
-2. Na página do sistema, use **Sincronizar agora**, ou espere o webhook de push. O hub lê o arquivo na branch padrão.
+2. Na aba **Configurações** da página do sistema, use **Sincronizar repositório** (o botão fica junto do painel **hub.json**), ou espere o webhook de push. O hub lê o arquivo na branch padrão.
 3. Se o repositório estiver ligado a mais de um sistema, o campo `slug` escolhe qual. Com um só, o slug pode faltar.
 4. Ao salvar tipo, canal, ligação ou recurso na tela, o hub monta o `hub.json` de novo. Se o token escreve e o arquivo no Git não mudou desde a última sincronização, ele é atualizado na branch padrão. Se o Git divergiu, a aba **Configurações** mostra o conflito e nada é sobrescrito até alguém que edita o serviço escolher o hub ou o Git. Se o token não escreve, a página mostra o texto para copiar e subir à mão.
 
-**Sincronizar repositório**, na mesma aba, também preenche o que ainda está vazio: a descrição do repositório, as tecnologias lidas dos manifestos, o `README.md` como primeira página de regras e o caminho de um OpenAPI encontrado na raiz ou em `docs/`. Variáveis e senhas não vão para o Git. Salvar uma página de regras grava `README.md` ou `docs/<slug>.md` na branch padrão, com a mesma trava de conflito.
+**Sincronizar repositório** também preenche o que ainda está vazio: a descrição do repositório, as tecnologias lidas dos manifestos, o `README.md` como primeira página de regras e o caminho de um OpenAPI encontrado na raiz ou em `docs/`. Variáveis e senhas não vão para o Git. Salvar uma página de regras grava `README.md` ou `docs/<slug>.md` na branch padrão, com a mesma trava de conflito.
 
 Um slug de sistema que o hub não conhece fica de fora e aparece no resultado. O resto do arquivo aplica. A spec OpenAPI continua sendo o contrato HTTP.
 
 ## Como saber que deu certo
 
-O mapa mostra o tipo no nó e o protocolo na aresta. A aba **Integrações** lista os canais, e a documentação lista os endpoints chamados. A auditoria registra `hub.json aplicado` ou `hub.json gravado`, sem o corpo do arquivo.
+O mapa mostra o tipo no nó e o protocolo na aresta. A aba **Integrações** lista os canais, e a documentação lista os endpoints chamados. A **Auditoria** registra que o `hub.json` foi aplicado ou gravado, sem o corpo do arquivo.
 
 ## Problemas comuns
 

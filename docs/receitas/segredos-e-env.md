@@ -13,9 +13,9 @@ O Rizoma é um **inventário** das variáveis de cada ambiente, não um cofre de
 ## Antes de começar
 
 - O serviço já existe e tem pelo menos um ambiente configurado. Veja [Do zero ao primeiro serviço](/receitas/primeiro-servico).
-- Você pode editar variáveis daquele serviço: precisa da permissão `envvars:edit` e ser do time responsável (ou ter `service:edit_any`). Com os papéis padrão, MAINTAINER, ADMIN e OWNER têm `envvars:edit`; o VIEWER só lê.
-- Para revelar segredos, você precisa de `envvars:reveal` e também ser do time do serviço. ADMIN e OWNER, que têm `service:edit_any`, revelam os segredos de qualquer serviço.
-- Quem só tem `envvars:read` (o VIEWER padrão) vê a lista, mas **os valores das variáveis comuns aparecem para essa pessoa**. Só os segredos ficam ocultos.
+- Você pode editar variáveis daquele serviço: precisa da permissão `envvars:edit` e ser do time responsável (ou ter `service:edit_any`). Com os papéis padrão, Mantenedor, Administrador e Proprietário têm `envvars:edit`; o Leitor só lê.
+- Para revelar segredos, você precisa de `envvars:reveal` e também ser do time do serviço. Administrador e Proprietário, que têm `service:edit_any`, revelam os segredos de qualquer serviço.
+- Quem só tem `envvars:read` (o Leitor padrão) vê a lista, mas **os valores das variáveis comuns aparecem para essa pessoa**. Só os segredos ficam ocultos.
 
 ## Passo a passo
 
@@ -25,13 +25,13 @@ No **Catálogo**, abra o serviço, escolha o ambiente no seletor no alto da pág
 
 ### 2. Adicione uma variável comum
 
-Em **Nova variável em** *ambiente*, preencha:
+Clique em **Nova variável**. No modal **Nova variável em** *ambiente*, preencha:
 
 | Campo | O que colocar |
 |---|---|
 | **Nome** | Letras maiúsculas, números e `_`, começando por letra ou `_` (até 128 caracteres). O hub converte para maiúsculas enquanto você digita. Exemplo: `PAGAMENTOS_BASE_URL`. |
 | **Valor em** *ambiente* | O valor daquele ambiente (até 10.000 caracteres). |
-| **Descrição (Markdown)** | Para que serve, formato esperado e quem fornece. Aparece na tabela. |
+| **Descrição (Markdown)** | Fica em **Detalhes opcionais**. Para que serve, formato esperado e quem fornece. Aparece na tabela. |
 
 Clique em **Adicionar variável**. A tabela mostra o nome, o valor e a descrição.
 
@@ -50,22 +50,22 @@ O hub ajuda de duas formas (RN-83):
 
 ### 4. Edite sem perder o segredo
 
-Na linha da variável, clique em **Editar**. O nome fica travado (para trocar o nome, exclua e crie de novo). Nos segredos, o campo de valor vem vazio, com a dica "Deixe em branco para manter o segredo atual." (RN-84):
+Na linha da variável, clique em **Editar**. O modal **Editar** *nome* **em** *ambiente* abre, e o nome fica travado (para trocar o nome, exclua e crie de novo). Nos segredos, o campo de valor vem vazio, com a dica "Deixe em branco para manter o segredo atual." (RN-84):
 
-- Para mudar só a descrição, deixe o valor em branco e clique em **Salvar**. O segredo fica como estava.
+- Para mudar só a descrição, deixe o valor em branco e clique em **Salvar variável**. O segredo fica como estava.
 - Para trocar o valor, digite o novo e salve.
 
 ::: warning Mudar a marcação de segredo
 Transformar um **segredo** em variável comum não reaproveita o valor cifrado: digite o valor de novo. Já uma variável comum marcada como segredo mantém o valor que estava no campo.
 :::
 
-**Excluir** remove a variável na hora, sem confirmação e sem desfazer.
+**Excluir** não pede confirmação: a linha mostra "Variável excluída" com o botão **Desfazer** por alguns segundos (cerca de 5). Passada essa janela, a exclusão vale e não tem volta.
 
 ### 5. Revele um segredo quando precisar
 
 Na linha do segredo, clique em **•••••• revelar**. O valor aparece, com **copiar** e **ocultar**. Se a linha mostra só `••••••` e nenhum botão, você não tem `envvars:reveal` ou não é do time do serviço.
 
-Cada revelação é registrada na **Auditoria**, com quem revelou, o serviço, o nome da variável e o ambiente. O valor nunca entra no registro (RN-85 e RN-88). Para conferir, abra **Auditoria**, procure "Segredo revelado" e clique na frase para abrir o registro. A lista de tipos não tem um grupo só de variáveis; filtre por **Pessoa** e período.
+Cada revelação é registrada na **Auditoria**, com quem revelou, o serviço, o nome da variável e o ambiente. O valor nunca entra no registro (RN-85 e RN-88). Para conferir, abra **Auditoria**, procure o registro que fala em revelar o valor de um segredo e abra-o. As variáveis ficam no grupo **Serviços**; dá para filtrar também por pessoa e período.
 
 ### 6. Baixe o .env sem segredos
 
@@ -82,12 +82,12 @@ PORT=8080
 STRIPE_API_KEY=
 ```
 
-Qualquer pessoa que veja o serviço e tenha `envvars:read` pode baixar. O download também fica na auditoria ("Variáveis exportadas (.env)"), com a contagem de variáveis. É um bom ponto de partida para quem entra no time: baixa o arquivo e pede os segredos a quem mantém o serviço.
+Qualquer pessoa que veja o serviço e tenha `envvars:read` pode baixar. O download também fica na auditoria, com a contagem de variáveis. É um bom ponto de partida para quem entra no time: baixa o arquivo e pede os segredos a quem mantém o serviço.
 
 ### 7. Copie as chaves de um ambiente para outro
 
 1. Abra o ambiente de **destino** (o seletor no alto da página). **Copiar de outro ambiente** só aparece para quem edita variáveis, e quando existe mais de um ambiente.
-2. Clique em **Copiar de outro ambiente**, escolha o ambiente de origem e clique em **Copiar**.
+2. Clique em **Copiar de outro ambiente**. No modal **Copiar chaves para** *ambiente*, escolha o ambiente de origem em **Copiar de qual ambiente?** (o campo só vem escolhido quando há um único ambiente de origem) e clique em **Copiar variáveis**.
 
 O que acontece (RN-87):
 
@@ -109,9 +109,9 @@ Depois de copiar, revise cada valor: uma URL de `dev` copiada para `prod` contin
 ## Como saber que deu certo
 
 - A variável aparece na tabela do ambiente; segredos com o selo **segredo**.
-- Ao clicar em **•••••• revelar**, o valor volta igual ao que você salvou, e a **Auditoria** ganha o evento "Segredo revelado".
+- Ao clicar em **•••••• revelar**, o valor volta igual ao que você salvou, e a **Auditoria** registra a revelação.
 - O `.env` baixado tem as variáveis comuns preenchidas e os segredos em branco.
-- Depois do **Copiar**, a mensagem informa quantas variáveis foram copiadas.
+- Depois de **Copiar variáveis**, a mensagem informa quantas variáveis foram copiadas.
 
 ## Problemas comuns
 
@@ -124,7 +124,7 @@ Depois de copiar, revise cada valor: uma URL de `dev` copiada para `prod` contin
 | "Só quem é do time do serviço pode revelar segredos." | Você tem `envvars:reveal`, mas o serviço é de outro time. Peça a quem é do time. |
 | Os segredos aparecem ilegíveis ou dão erro depois de uma migração | A `ENCRYPTION_KEY` do novo servidor é diferente da original. Restaure a chave antiga. |
 | A variável copiada tem o valor "velho" | Chaves que já existiam no destino não são sobrescritas. Edite o valor no destino. |
-| Excluí uma variável sem querer | Não há desfazer. Crie de novo; segredos precisam ser digitados outra vez. |
+| Excluí uma variável sem querer | Se o botão **Desfazer** ainda está na linha, clique nele. Passados alguns segundos não há desfazer: crie de novo, e digite os segredos outra vez. |
 
 ## Veja também
 

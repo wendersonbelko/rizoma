@@ -22,7 +22,7 @@ flowchart LR
 
 | Origem | Enum `SpecSource` | Quem chama `storeSpec` | Arquivo |
 |---|---|---|---|
-| CI envia | `CI_PUSH` | rota `POST /api/v1/specs` | `apps/web/src/app/api/v1/specs/route.ts` |
+| Enviada pelo CI | `CI_PUSH` | rota `POST /api/v1/specs` | `apps/web/src/app/api/v1/specs/route.ts` |
 | Arquivo no repositório | `REPO_FILE` | `syncService` | `apps/web/src/lib/sources.ts` |
 | Lida de uma URL | `URL_PULL` | `syncService` | `apps/web/src/lib/sources.ts` |
 | Importação manual | `MANUAL_UPLOAD` | server action `uploadSpec` | `apps/web/src/app/(hub)/services/[slug]/actions.ts` |

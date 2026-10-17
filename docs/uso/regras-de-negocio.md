@@ -19,18 +19,20 @@ Uma spec descreve endpoints, parâmetros e respostas, mas não explica por que u
 | Ação | Permissão |
 |---|---|
 | Ler as páginas | Ver o catálogo e enxergar o serviço (RN-30). Todos os papéis. |
-| Criar, editar e excluir páginas | Editar regras de negócio, mais fazer parte do time responsável pelo serviço (MAINTAINER, ADMIN e OWNER, por padrão). |
+| Criar, editar e excluir páginas | Editar regras de negócio, mais fazer parte do time responsável pelo serviço (Mantenedor, Administrador e Proprietário, por padrão). |
 
-Quem tem a permissão de editar qualquer serviço (ADMIN e OWNER, por padrão) edita as regras de qualquer serviço, mesmo sem ser do time. Serviços arquivados não aceitam edição. Veja [Papéis e permissões](/referencia/permissoes).
+Quem tem a permissão de editar qualquer serviço (Administrador e Proprietário, por padrão) edita as regras de qualquer serviço, mesmo sem ser do time. Serviços arquivados não aceitam edição. Veja [Papéis e permissões](/referencia/permissoes).
 
 ## O que aparece na tela
 
 A aba tem duas colunas:
 
 - **À esquerda**, a lista de páginas do serviço, com o título de cada uma. A página aberta fica destacada. Quem pode editar vê também **+ Nova página**. Uma nota lembra que "As regras valem para todos os ambientes.": o seletor de ambiente não muda o conteúdo desta aba.
-- **À direita**, a página aberta: o título, a data ("Atualizado em 24/09/2026"), o conteúdo em Markdown já formatado e, para quem edita, o link **Editar** ao lado da data e o botão **Excluir esta página** no fim.
+- **À direita**, a página aberta: o título, a data ("Atualizado em 24/09/2026"), o conteúdo em Markdown já formatado e, para quem edita, o link **Editar** ao lado da data e, no fim, a **Zona de perigo** com a ação **Excluir esta página**.
 
 Uma página sem conteúdo mostra "Página vazia." A página aberta por padrão é a primeira da lista. O endereço guarda a página aberta, por exemplo `/services/pedidos-api?tab=rules&doc=regras-de-negocio`.
+
+Criar e editar abrem num modal que depende do endereço: **+ Nova página** acrescenta `edit=new` e **Editar** acrescenta `edit=1`. Ao fechar o modal, você volta para a aba, na página que estava lendo.
 
 Quando o serviço ainda não tem nenhuma página, a aba mostra "Nenhuma regra de negócio documentada" e a sugestão de descrever como o serviço funciona, as regras que ele aplica e os pontos de atenção. Quem pode editar vê o botão **Escrever a primeira página**.
 
@@ -39,7 +41,7 @@ Quando o serviço ainda não tem nenhuma página, a aba mostra "Nenhuma regra de
 ### Criar uma página
 
 1. Na aba **Regras de negócio**, clique em **+ Nova página** (ou em **Escrever a primeira página**).
-2. No modal **Nova página**, preencha o **Título da página** (de 2 a 80 caracteres). O padrão é "Regras de negócio".
+2. No modal **Nova página**, preencha o **Título da página** (obrigatório, de 2 a 80 caracteres), por exemplo "Regras de cobrança".
 3. Escreva o conteúdo. O editor já vem com um modelo, que você troca ou completa:
 
    ```markdown
@@ -63,7 +65,9 @@ Quando o serviço ainda não tem nenhuma página, a aba mostra "Nenhuma regra de
    | | |
    ```
 
-4. Clique em **Salvar página**. A resposta é "Documento salvo." e o hub abre a página criada.
+4. Clique em **Criar página**. O hub salva e abre a página criada.
+
+O rodapé do modal tem **Cancelar** à esquerda e **Criar página** à direita. Se você digitou algo, **Cancelar**, o **×**, o Esc e o clique fora perguntam "Descartar o que você digitou?" antes de fechar.
 
 O endereço da página (`doc=`) é gerado a partir do título e não muda depois, mesmo que você renomeie a página. Se já existir uma página com o mesmo título, o hub acrescenta um número ao final do endereço (`regras-2`).
 
@@ -87,7 +91,13 @@ A pré-visualização usa o mesmo renderizador da página publicada, então o qu
 
 ### Excluir uma página
 
-No fim da página, clique em **Excluir esta página**. A exclusão é imediata, sem pedido de confirmação, e não tem como desfazer. Ela fica registrada na [Auditoria](/admin/auditoria).
+Excluir é permanente: o texto foi escrito à mão e não há **Desfazer**. Por isso o hub pede que você digite o título da página.
+
+1. No fim da página, na **Zona de perigo**, clique em **Excluir página**. O modal explica o efeito: "A página e o texto dela são apagados do hub. Se o repositório do serviço estiver conectado, o arquivo dela também sai de lá. Não dá para desfazer."
+2. O campo pede "Digite" o título da página "para confirmar". Digite o título exatamente como aparece. O botão vermelho **Excluir página** só habilita quando o texto confere.
+3. Clique em **Excluir página**. A aba volta a mostrar a primeira página da lista.
+
+Se o texto não bater, o hub responde "Digite o título da página exatamente como está para confirmar." e nada é excluído. A exclusão fica registrada na [Auditoria](/admin/auditoria).
 
 ### Ordem das páginas
 
@@ -122,6 +132,7 @@ Links para fora do hub abrem em outra aba; links internos (`/services/…`) e â
 - **Valem para todos os ambientes.** Diferente da spec e das variáveis, as regras não são separadas por ambiente.
 - **Markdown seguro (RN-S18).** Todo Markdown do hub é renderizado sem HTML cru e sem esquemas de link perigosos.
 - **Histórico.** O hub guarda só a versão atual de cada página e a data da última atualização. Para manter histórico de mudanças, mantenha uma cópia do texto num repositório.
+- **Cópia no repositório.** Se o serviço tem um repositório de código-fonte ligado e o token do hub consegue gravar nele, salvar uma página grava o arquivo `docs/<endereço da página>.md` no repositório, e excluir a página remove esse arquivo. Se o arquivo no repositório divergiu, o hub não sobrescreve nada: o conflito aparece na aba **Configurações** do serviço.
 
 ## Próximos passos
 

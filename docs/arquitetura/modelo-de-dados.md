@@ -31,6 +31,7 @@ erDiagram
     string githubLogin UK
     Role role
     UserStatus status
+    ThemePreference themePreference
     int tokenVersion
   }
   Team {
@@ -68,11 +69,11 @@ erDiagram
 
 | Modelo | Para que serve | Pontos importantes |
 |---|---|---|
-| `User` | Uma pessoa com acesso (ou pedindo acesso) ao hub. | `role` (OWNER, ADMIN, MAINTAINER, VIEWER) e `status` (PENDING, ACTIVE, SUSPENDED, REJECTED). `accessGrant` diz como o acesso foi concedido; `accessExpiresAt` é o prazo do acesso temporário. `isOrgMember` e `lastMembershipCheckAt` guardam o último resultado da checagem de vínculo. `tokenVersion` invalida todas as sessões JWT quando incrementado. `passwordHash` (scrypt), `failedLogins` e `lockedUntil` são do login por e-mail e senha. `tourStep` e `tourCompletedAt` guardam o progresso do tour obrigatório. |
+| `User` | Uma pessoa com acesso (ou pedindo acesso) ao hub. | `role` (OWNER, ADMIN, MAINTAINER, VIEWER) e `status` (PENDING, ACTIVE, SUSPENDED, REJECTED). `accessGrant` diz como o acesso foi concedido; `accessExpiresAt` é o prazo do acesso temporário. `isOrgMember` e `lastMembershipCheckAt` guardam o último resultado da checagem de vínculo. `tokenVersion` invalida todas as sessões JWT quando incrementado. `passwordHash` (scrypt), `failedLogins` e `lockedUntil` são do login por e-mail e senha. `tourStep` e `tourCompletedAt` guardam o progresso do tour obrigatório. `themePreference` (`ThemePreference`) é o tema da própria pessoa: Claro, Escuro ou Sistema (o padrão). |
 | `Account` | Conta de um provedor externo ligada à pessoa (tabela do Auth.js). | Chave `[provider, providerAccountId]`. Os tokens (`access_token`, `refresh_token`, `id_token`) ficam cifrados. Apagar a pessoa apaga as contas (`Cascade`). |
 | `VerificationToken` | Tabela exigida pelo adaptador do Auth.js. | Sem uso ativo no hub. |
 | `UserInvite` | Convite para criar senha ou link de redefinição de senha. | `kind` é `INVITE` ou `PASSWORD_RESET`. Só o hash do token é salvo (`tokenHash`, único). `usedAt` marca o uso único; `expiresAt` o prazo. |
-| `AccessRequest` | Pedido de acesso de quem não comprovou vínculo. | `status` (PENDING, APPROVED, REJECTED, EXPIRED). `reason` é a justificativa da pessoa; `decidedById`, `decisionNote` e `grantedRole` registram a decisão; `expiresAt` é a validade do pedido. |
+| `AccessRequest` | Solicitação de acesso de quem não comprovou vínculo. | `status` (PENDING, APPROVED, REJECTED, EXPIRED). `reason` é a justificativa da pessoa; `decidedById`, `decisionNote` e `grantedRole` registram a decisão; `expiresAt` é a validade da solicitação. |
 | `Team` | Um time responsável por serviços. | `slug` único. `githubTeamSlug` está reservado para a sincronização com times do GitHub, prevista no roadmap. |
 | `TeamMember` | Participação de uma pessoa num time. | Chave `[teamId, userId]`; `role` é `LEAD` ou `MEMBER`. |
 | `AuditLog` | Trilha de auditoria. | `action` no formato `grupo.acao` (por exemplo, `spec.published`); a tela agrupa pelo prefixo. `targetType` e `targetId` apontam o alvo; `metadata` é JSON livre; `ip` vem do cabeçalho do proxy. A pessoa autora vira `null` se for apagada (`SetNull`). Nenhum valor de segredo entra aqui. |
@@ -207,7 +208,7 @@ Estes quatro modelos não têm relações: guardam a configuração do hub.
 
 | Modelo | Para que serve | Pontos importantes |
 |---|---|---|
-| `Installation` | Estado e configuração global. | **Singleton**: uma única linha com `id = "singleton"`, criada na primeira leitura (`getInstallation`, em `apps/web/src/lib/install.ts`, com `upsert` e tratamento da corrida `P2002`). Guarda `installed`, `currentStep` (etapa do assistente), organização (`orgName`, `allowedGithubOrgs`, `allowedEmailDomains`), política de acesso (`autoApproveOrgMembers`, `outsiderPolicy`, `sessionMaxAgeHours`, `membershipRecheckHours`, `accessRequestTtlDays`), o primeiro administrador (`ownerIdentifier`), a janela de recuperação de OWNER (`recoveryIdentifier`, `recoveryExpiresAt`) e a aparência (`appName`, `themeId`, `themeOverrides`). |
+| `Installation` | Estado e configuração global. | **Singleton**: uma única linha com `id = "singleton"`, criada na primeira leitura (`getInstallation`, em `apps/web/src/lib/install.ts`, com `upsert` e tratamento da corrida `P2002`). Guarda `installed`, `currentStep` (etapa do assistente), organização (`orgName`, `allowedGithubOrgs`, `allowedEmailDomains`), política de acesso (`autoApproveOrgMembers`, `outsiderPolicy`, `sessionMaxAgeHours`, `membershipRecheckHours`, `accessRequestTtlDays`), o primeiro administrador (`ownerIdentifier`), a janela de recuperação de OWNER (`recoveryIdentifier`, `recoveryExpiresAt`) e a marca do sistema: `appName` (o nome) e `themeOverrides`, que guarda só a cor de destaque, `{ "accent": "#0f7a68" }`. O tema Claro ou Escuro não é da instalação: é de cada pessoa (`User.themePreference`). `themeId` ficou como legado e não é mais lido. |
 | `RolePermission` | Matriz de permissões por papel. | Chave `[role, permission]`. **Tabela vazia significa "use o padrão"** (`DEFAULT_MATRIX`, em `packages/core/src/rbac.ts`); a aplicação não preenche o padrão no banco. Ao salvar, as linhas de ADMIN, MAINTAINER e VIEWER são regravadas de uma vez; **restaurar o padrão** apaga tudo. Com qualquer linha presente, o padrão deixa de valer para todos os papéis. OWNER nunca é gravado (sempre tem tudo) e `catalog:read` é sempre acrescentada em `buildMatrix`. |
 | `AuthProvider` | Uma forma de login habilitada. | Chave `type` (`AuthProviderType`). `clientId`, `clientSecretEnc` (cifrado), `issuer` (OIDC e GitLab próprio), `tenantId` (Microsoft), `label` (botão do OIDC) e `allowSignup` (cadastro aberto no e-mail e senha). |
 | `SourceIntegration` | Integração com a hospedagem de código. | Chave `type` (`SourceProviderType`). `baseUrl` para instalações próprias e `tokenEnc` (token só de leitura, cifrado). Usada para validar repositórios e ler specs. |
@@ -219,7 +220,7 @@ Estes quatro modelos não têm relações: guardam a configuração do hub.
 | `Role` | OWNER, ADMIN, MAINTAINER, VIEWER | Papel da pessoa. Define as permissões pela matriz. |
 | `UserStatus` | PENDING, ACTIVE, SUSPENDED, REJECTED | Situação do acesso. Só ACTIVE usa o hub. |
 | `AccessGrant` | OWNER_SETUP, ORG_MEMBERSHIP, MANUAL_APPROVAL | Como o acesso foi concedido. Define o que acontece quando o vínculo com a empresa muda. |
-| `AccessRequestStatus` | PENDING, APPROVED, REJECTED, EXPIRED | Estado de um pedido de acesso. |
+| `AccessRequestStatus` | PENDING, APPROVED, REJECTED, EXPIRED | Estado de uma solicitação de acesso. |
 | `OutsiderPolicy` | REQUEST_APPROVAL, BLOCK | O que fazer com quem não comprova vínculo. |
 | `TeamRole` | LEAD, MEMBER | Papel dentro do time. |
 | `Visibility` | ORG, TEAM | Quem vê o serviço: toda a empresa ou só o time. |
@@ -231,6 +232,7 @@ Estes quatro modelos não têm relações: guardam a configuração do hub.
 | `ResourceKind` | HTTP_API, QUEUE, TOPIC, WEBHOOK, DATABASE, CACHE, STORAGE, EMAIL_SMS, OTHER | Tipo de integração externa. |
 | `ResourceRelation` | CONSUMES, PROVIDES, PUBLISHES, SUBSCRIBES, SENDS_WEBHOOK, RECEIVES_WEBHOOK, READS, WRITES | Como o serviço usa a integração. |
 | `ServiceRepoRole` | SOURCE, CLIENT_SDK, INFRA, CONTRACT | Papel do repositório para o serviço. |
+| `ThemePreference` | LIGHT, DARK, SYSTEM | Tema da interface escolhido por cada pessoa. SYSTEM segue o sistema operacional. Espelhado em `types.ts` com os nomes Claro, Escuro e Sistema. |
 
 ## Campos cifrados e campos com hash
 
@@ -251,6 +253,11 @@ As migrações ficam em `packages/db/prisma/migrations`, uma pasta por migraçã
 | `20260927000000_ambientes_integracoes_login` | Ambientes por branch, variáveis de ambiente, integrações externas, regras de negócio em Markdown, formas de login (com convites e senha, e sessões passando a JWT), matriz de permissões, integrações de repositório, aparência. |
 | `20260927010000_remove_setup_token` | Remove o token central do assistente (o projeto é aberto) e ajusta a etapa inicial. |
 | `20260927020000_add_tour_progress` | Acrescenta o progresso do tour guiado obrigatório em `User`. |
+| `20260929180000_mail_diff_webhook` | SMTP (`MailSettings`), diff de spec, índice de endpoints, segredo de webhook por provedor e o token da sincronização agendada. |
+| `20260929190000_system_kind_channels` | Tipo do serviço (API, Frontend ou Worker), canais, chamadas de endpoint e operação descontinuada. |
+| `20260929230000_repo_sync` | Estado da leitura do repositório (`Service.repoSync`). |
+| `20260930180000_rename_app_to_rizoma` | O nome padrão do sistema passa a ser Rizoma. |
+| `20261002220000_user_theme_preference` | Cria o enum `ThemePreference` e a coluna `User.themePreference` (padrão `SYSTEM`): o tema Claro, Escuro ou Sistema é de cada pessoa. Quem já existe começa em `SYSTEM`, então nada muda de repente. |
 
 Regras de trabalho:
 

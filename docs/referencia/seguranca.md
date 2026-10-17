@@ -26,7 +26,9 @@ A verificação de senha gasta o mesmo tempo quando a conta não existe, para n�
 
 A sessão é um JWT (RN-S03), a mesma estratégia para provedores externos e para e-mail com senha. A duração vem de **Sessão (horas)** e vale para o próximo login (padrão 8 horas).
 
-Suspender, trocar a senha, encerrar todas as sessões ou usar a recuperação de OWNER incrementa um contador. Um JWT antigo deixa de valer na próxima requisição, sem esperar expirar.
+Suspender, trocar a senha, encerrar todas as sessões ou usar a recuperação de Proprietário (`pnpm admin:recover`) incrementa um contador. Um JWT antigo deixa de valer na próxima requisição, sem esperar expirar.
+
+O tema da interface (Claro, Escuro ou Sistema) é uma preferência de cada pessoa. Ela fica na conta e no cookie `rizoma-theme`, que guarda só essa escolha, por um ano, sem dado de sessão. Mudar de tema não entra na auditoria.
 
 ## O que cada pessoa vê
 

@@ -8,16 +8,16 @@ Se todos os OWNERs do Rizoma perderem o acesso, quem administra o servidor pode 
 
 ## Para que serve
 
-O OWNER é o único papel que sempre tem todas as permissões, e a instalação nunca deve ficar sem um. Mas contas se perdem: alguém sai da empresa, muda a organização do GitHub, esquece a senha, ou o provedor de login deixa de reconhecer o e-mail. Sem OWNER, ninguém acessa **Configurações** nem **Permissões**, e o hub fica sem quem o administre.
+O OWNER (**Proprietário**, nos textos da interface) é o único papel que sempre tem todas as permissões, e a instalação nunca deve ficar sem um. O código `OWNER` continua aparecendo nos comandos e no banco, por isso esta página o usa. Mas contas se perdem: alguém sai da empresa, muda a organização do GitHub, esquece a senha, ou o provedor de login deixa de reconhecer o e-mail. Sem OWNER, ninguém acessa **Configurações** nem **Permissões**, e o hub fica sem quem o administre.
 
 A recuperação resolve isso sem mexer no banco à mão.
 
 ## Quando usar
 
-Use quando **não há mais nenhum OWNER ativo** que consiga entrar. Se ainda existe um OWNER com acesso, não precisa do comando: ele muda o papel de outra pessoa em [Pessoas e acesso](/admin/pessoas-e-acesso). Se o problema é só uma senha esquecida, um admin gera um link de nova senha na mesma tela.
+Use quando **não há mais nenhum OWNER ativo** que consiga entrar. Se ainda existe um OWNER com acesso, não precisa do comando: ele muda o papel de outra pessoa em [Pessoas e acesso](/admin/pessoas-e-acesso). Se o problema é só uma senha esquecida, um administrador gera um link de nova senha na ficha da pessoa, no bloco **Segurança**.
 
 ::: tip Evite chegar aqui
-Mantenha pelo menos dois OWNERs ativos. A tela [Configurações](/admin/configuracoes) recomenda isso quando há menos de dois.
+Mantenha pelo menos dois OWNERs ativos. O cabeçalho de [Configurações](/admin/configuracoes) recomenda isso ("Recomendado ter pelo menos dois Proprietários ativos.") quando há menos de dois.
 :::
 
 ## Quem pode
@@ -108,32 +108,32 @@ O comando não cria contas. Em vez disso, abre uma **janela de 60 minutos**: "fu
 Se ninguém entrar em 60 minutos, a janela expira sozinha, e você roda o comando de novo. Com `--reset-password` para uma conta que não existe, o comando recusa: "fulano não tem conta. Sem --reset-password, o comando abre a janela de primeiro login."
 
 ::: warning A janela não pede senha
-Durante os 60 minutos, quem entrar com aquele usuário ou e-mail, por um provedor ativo, vira OWNER. Combine o horário com a pessoa e confirme depois, em **Configurações**, quem ficou como OWNER.
+Durante os 60 minutos, quem entrar com aquele usuário ou e-mail, por um provedor ativo, vira OWNER. Combine o horário com a pessoa e confirme depois, no cabeçalho de **Configurações** ou em **Pessoas e acesso**, quem ficou como Proprietário.
 :::
 
 ## O alerta em Configurações
 
-Enquanto uma janela está aberta, a tela [Configurações](/admin/configuracoes), na seção **Sessões e recuperação**, mostra o aviso **Recuperação de OWNER em aberto** (RN-72). Ele diz de quem é a janela e até quando vale:
+Enquanto uma janela está aberta, a tela [Configurações](/admin/configuracoes), na aba **Ambientes e sessões** (`?s=environments`), seção **Sessões e recuperação**, mostra o aviso **Recuperação de Proprietário em aberto** (RN-72). Ele diz de quem é a janela e até quando vale:
 
-> O primeiro login de **fulano** até 29/09/2026 15:42 vira OWNER. Se você não abriu essa janela pelo servidor, cancele e revise quem tem acesso de linha de comando ao servidor.
+> O primeiro login de **fulano** até 29/09/2026 15:42 vira Proprietário. Se você não abriu essa janela pelo servidor, cancele e revise quem tem acesso de linha de comando ao servidor.
 
 ### Cancelar a janela
 
-Um OWNER (ou quem tem a permissão de configurações) clica em **Cancelar janela de recuperação** no mesmo aviso. O hub responde "Janela de recuperação cancelada." e o identificador é apagado. Cancele sempre que a janela tiver sido aberta por engano, ou por alguém que não deveria ter acesso ao servidor. Uma janela cancelada não pode mais ser usada.
+No mesmo aviso, o bloco **Cancelar a janela de recuperação** tem o botão **Cancelar janela**. Um Proprietário (ou quem tem a permissão de configurações) clica nele, e um modal confirma ("O primeiro login desse identificador deixa de virar Proprietário. Se precisar, abra outra janela pelo servidor."): clique de novo em **Cancelar janela**. O aviso desaparece e o identificador é apagado. Cancele sempre que a janela tiver sido aberta por engano, ou por alguém que não deveria ter acesso ao servidor. Uma janela cancelada não pode mais ser usada.
 
 ## O que fica na auditoria
 
-Todo passo da recuperação é registrado (RN-73), e você o filtra na [Auditoria](/admin/auditoria) pelo tipo **Recuperação de OWNER** (o link de nova senha aparece em **Pessoas**):
+Todo passo da recuperação é registrado (RN-73), e você o filtra na [Auditoria](/admin/auditoria) pelo tipo de evento **Recuperação de proprietário** (o link de nova senha aparece em **Pessoas**). A linha mostra a frase; o código fica em **Detalhes**:
 
-| Momento | Registro |
+| Momento | Código e frase |
 |---|---|
-| Janela aberta pelo comando | `owner.recovery_opened`, com o login e a hora de expiração |
-| Pessoa existente promovida pelo comando | `owner.recovered` ("Acesso de OWNER recuperado"), com o papel e o status anteriores |
-| Janela usada por um login | `owner.recovered` ("Acesso de OWNER recuperado"), em nome da pessoa que entrou |
-| Janela cancelada | `owner.recovery_cancelled` ("Recuperação de OWNER cancelada"), em nome de quem cancelou |
-| Link de nova senha gerado pelo comando | `user.password_reset_link`, com a origem `cli` |
+| Janela aberta pelo comando | `owner.recovery_opened`, com o login e a hora de expiração. Ainda não tem frase própria: a linha diz `Sistema registrou a ação "owner.recovery_opened"`. |
+| Pessoa existente promovida pelo comando | `owner.recovered`: "Sistema recuperou o acesso de proprietário", com o papel e o status anteriores nos dados do evento |
+| Janela usada por um login | `owner.recovered`: "Fulano recuperou o acesso de proprietário", em nome da pessoa que entrou |
+| Janela cancelada | `owner.recovery_cancelled`: "Marina Costa cancelou a recuperação de proprietário", em nome de quem cancelou |
+| Link de nova senha gerado pelo comando | `user.password_reset_link`: "Sistema gerou um link de nova senha", com a origem `cli` nos dados do evento |
 
-Os registros feitos pelo comando aparecem sem pessoa em **Quem** ("sistema"), porque quem executou foi o servidor, não uma conta do hub.
+Os registros feitos pelo comando aparecem com **Sistema** no lugar do autor, porque quem executou foi o servidor, não uma conta do hub.
 
 ## Por que não existe um token central
 

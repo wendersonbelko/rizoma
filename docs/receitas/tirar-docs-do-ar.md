@@ -47,7 +47,7 @@ A spec continua sendo gerada no build; só deixa de ser servida ao público.
 
 Para cada ambiente, abra o serviço no **Catálogo** e compare com o `/docs` atual:
 
-- o serviço aparece com o selo do ambiente e a versão esperada;
+- o serviço aparece com a pílula do ambiente e a versão esperada, na coluna **Ambientes**;
 - na aba **Documentação da API**, os endpoints, os schemas e os servidores estão iguais aos do `/docs`;
 - o time responsável e a visibilidade (**Toda a empresa** ou **Só o time responsável**) estão certos;
 - quem precisa consultar a documentação tem acesso ao hub e a permissão de ver o serviço.

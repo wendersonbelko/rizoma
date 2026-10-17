@@ -89,11 +89,12 @@ O repositório traz um modelo de PR (`.github/PULL_REQUEST_TEMPLATE.md`) com est
 - [ ] Rodei `pnpm test:integration` (obrigatório se mexi em banco, acesso, permissões ou publicação de specs).
 - [ ] Escrevi ou atualizei testes para a regra nova ou o bug corrigido.
 - [ ] Segui os [padrões de código](/contribuindo/padroes-de-codigo) e usei os componentes do design system.
-- [ ] Se mudei uma **tela do menu**, atualizei o tour em `apps/web/src/lib/tours.ts`.
+- [ ] Se mudei uma **tela do menu**, atualizei o tour em `apps/web/src/lib/tours.ts` e mantive o item do menu com o mesmo nome do título da página.
+- [ ] Se criei ou mudei um **formulário**, usei o modal-padrão (`FormModal` e `ModalActions`) e, para ação destrutiva, `DangerZone`.
 - [ ] Se mudei o **schema do banco**, criei uma migração e não editei nenhuma migração já publicada.
 - [ ] Se criei uma **permissão**, pensei em quem já usa uma matriz personalizada (veja [Criar uma permissão](/contribuindo/guias/nova-permissao)).
 - [ ] Atualizei a **documentação** (`docs/`) e rodei `pnpm docs:build` sem links quebrados.
-- [ ] Anexei **prints** (claro e escuro, se couber) para mudanças visuais.
+- [ ] Anexei **prints** nos dois temas (Claro e Escuro) para mudanças visuais.
 - [ ] Toda ação administrativa nova chama `audit()` e nenhuma mensagem, log ou auditoria expõe segredos.
 
 ::: tip Rode o build quando tocar em rotas ou configuração

@@ -1,5 +1,5 @@
 ---
-description: "Popule um hub de teste com serviços, times, pessoas, integrações, variáveis e pedidos de acesso de exemplo (pnpm demo:seed) para explorar todas as telas, e saiba como recomeçar do zero."
+description: "Popule um hub de teste com serviços, times, pessoas, integrações, variáveis e solicitações de acesso de exemplo (pnpm demo:seed) para explorar todas as telas, e saiba como recomeçar do zero."
 ---
 
 # Hub com dados de demonstração
@@ -57,7 +57,7 @@ A variante Docker segue o mesmo padrão do `admin:recover`: roda dentro do cont�
 |---|---|
 | **Serviços** (5) | **Pedidos** (`pedidos`) e **Pagamentos** (`pagamentos`), do time Pagamentos; **Estoque** (`estoque`) e **Frete (legado)** (`frete`, descontinuado), da Logística; **Notificações** (`notificacoes`), da Plataforma. |
 | **Times** (3) | **Pagamentos** (Joana líder, Lucas membro e, com `--me`, você líder), **Logística** (Pedro líder, Carla membro) e **Plataforma** (Rafael líder). |
-| **Pessoas** (7) | Ativas: Rafael Souza (ADMIN), Joana Lima e Pedro Alves (MAINTAINER), Lucas Melo e Carla Nunes (VIEWER). Pendentes: Ana Prado (`@ana-consultoria`, sem vínculo, com justificativa de consultoria) e Bruno Rocha (`@bruno-estagio`, vínculo comprovado, sem justificativa). |
+| **Pessoas** (7) | Ativas: Rafael Souza (Administrador), Joana Lima e Pedro Alves (Mantenedor), Lucas Melo e Carla Nunes (Leitor). Pendentes: Ana Prado (`@ana-consultoria`, sem vínculo, com justificativa de consultoria) e Bruno Rocha (`@bruno-estagio`, vínculo comprovado, sem justificativa). |
 | **Specs** | **Pedidos** em `dev` (2.5.0-dev.14), `hml` (2.5.0-rc.1) e `prod` (2.4.0, com a 2.3.1 no histórico); **Pagamentos** em `prod` e `hml`; **Estoque** em `prod` e `dev`; **Notificações** e **Frete** em `prod`. |
 | **Origens de spec** | **Estoque** lê um arquivo do repositório (`docs/openapi.yaml`); **Notificações** lê de uma URL com `{env}`; os demais são enviados pelo CI. |
 | **Repositórios** (6) | `pedidos-api`, `pagamentos-api`, `estoque-api`, `notificacoes-worker`, `sdk-js` e `infra-terraform`, na sua primeira organização do GitHub aceita (ou `acme`). Os endereços são fictícios. |
@@ -78,7 +78,7 @@ O `pnpm demo:seed` recusa um catálogo que já tem serviço. Para somar pessoas 
 pnpm demo:fill
 ```
 
-O comando recusa produção. Ele procura o slug que já existe (por exemplo `pedidos-api` e `time-de-pedidos`) antes de criar outro. Não troca descrição de serviço nem a senha de quem não está na lista. Quem já é OWNER fica como está.
+O comando recusa produção. Ele procura o slug que já existe (por exemplo `pedidos-api` e `time-de-pedidos`) antes de criar outro. Não troca descrição de serviço nem a senha de quem não está na lista. Quem já é Proprietário fica como está.
 
 Entram 17 pessoas `nome.sobrenome@belko.com.br`, todas com a senha `Senha@Segura10`, ativas no login por e-mail. Também entram a Loja, o Painel de operação, o App do entregador, dois workers, a fila RabbitMQ `pedido.criado`, o PostgreSQL da loja, o Redis de sessão e as APIs públicas ViaCEP, BrasilAPI, Open-Meteo e IBGE. Os endereços internos não trazem senha. Rodar de novo não duplica.
 
@@ -86,13 +86,13 @@ Entram 17 pessoas `nome.sobrenome@belko.com.br`, todas com a senha `Senha@Segura
 
 Um roteiro para ver cada tela com dados:
 
-1. **Catálogo:** os cinco serviços, com as versões de cada ambiente ao lado. Note o selo de descontinuado em **Frete (legado)** e as versões diferentes de **Pedidos** em `dev`, `hml` e `prod`.
+1. **Catálogo:** os cinco serviços, com a pílula e a versão de cada ambiente na coluna **Ambientes**. Note o selo de descontinuado em **Frete (legado)** e as versões diferentes de **Pedidos** em `dev`, `hml` e `prod`. Use a busca, os filtros **Time**, **Tipo** e **Situação** e o chip **Sem spec**.
 2. **Página de Pedidos:** troque de ambiente no seletor, abra a **Documentação da API** e as versões anteriores, leia **Regras de negócio**, veja a fila e o banco em **Integrações**.
-3. **Variáveis de ambiente** de Pedidos: os valores comuns aparecem e os segredos mostram **•••••• revelar**. Como OWNER, você consegue revelar. Depois abra a **Auditoria** e veja o evento "Segredo revelado". Baixe o `.env` e note os segredos em branco.
-4. **Mapa de ligações:** clique em **Pedidos** para focar, aumente a **Distância** e alterne entre **Mapa** e **Lista**.
+3. **Variáveis de ambiente** de Pedidos: os valores comuns aparecem e os segredos mostram **•••••• revelar**. Como Proprietário, você consegue revelar. Depois abra a **Auditoria** e veja o registro da revelação. Baixe o `.env` e note os segredos em branco.
+4. **Mapa de ligações:** ele abre em foco no serviço mais conectado. Clique em **Pedidos** (ou escolha em **Foco**) para focá-lo, passe de **1º grau** para **2º grau** e **Tudo**, e alterne entre **Mapa** e **Lista**.
 5. **Integrações externas:** as sete integrações, com o filtro por tipo.
-6. **Pessoas e acesso:** decida os dois pedidos pendentes (**Aprovar** ou **Recusar**), veja o prazo em "Por 90 dias" e o **Histórico de decisões**.
-7. **Times, Permissões, Auditoria e Aparência:** mexa à vontade. **Restaurar padrão** em **Permissões** desfaz o que você mudar.
+6. **Pessoas e acesso:** decida as duas solicitações de acesso pendentes (**Aprovar acesso** ou **Recusar**), veja o prazo em "Por 90 dias" e o **Histórico**.
+7. **Times, Permissões, Auditoria e a aba Aparência de Configurações:** mexa à vontade. A **Aparência** do hub (Claro, Escuro ou Sistema) é de cada pessoa e fica no menu do seu avatar, no pé da barra lateral. **Restaurar padrão** em **Permissões** desfaz o que você mudar.
 8. **Papéis:** para ver o hub com outro papel, convide uma conta de teste (veja [Convidar por e-mail](/receitas/convidar-por-email)).
 
 Dois limites: **Sincronizar agora** falha em **Estoque** e em **Notificações**, porque os endereços são fictícios. E os dois tokens de exemplo nunca tiveram o valor exibido; para testar a publicação, gere um token novo (veja [Do zero ao primeiro serviço](/receitas/primeiro-servico), usando o serviço `pedidos`).
@@ -119,7 +119,7 @@ Reinicie o `pnpm dev`, abra `http://localhost:3000` e refaça o assistente de in
 
 - O comando termina com a linha "Demonstração criada: …".
 - O **Catálogo** mostra cinco serviços, e o **Mapa de ligações** mostra serviços, integrações, repositórios e times.
-- **Pessoas e acesso** mostra dois pedidos em **Pedidos aguardando** e cinco pessoas ativas, além de você.
+- **Pessoas e acesso** mostra duas **Solicitações de acesso** pendentes e cinco pessoas ativas, além de você.
 - **Times** lista Pagamentos, Logística e Plataforma (e você em Pagamentos, se usou `--me`).
 
 ## Problemas comuns
@@ -129,7 +129,7 @@ Reinicie o `pnpm dev`, abra `http://localhost:3000` e refaça o assistente de in
 | "Não rode dados de demonstração em produção." | O shell tem `NODE_ENV=production`. Rode num ambiente de desenvolvimento. |
 | "Conclua a instalação pelo assistente antes de popular a demonstração." | O hub ainda não está instalado. Termine o assistente. |
 | "Já existem serviços cadastrados. A demonstração só roda num hub vazio." | Há ao menos um serviço, mesmo arquivado. Recomece do zero (passo 5). |
-| "Nenhum ambiente configurado." | A instalação normalmente não termina sem ambientes. Se acontecer, o comando já criou pessoas, times e serviços antes de falhar: cadastre um ambiente em **Configurações → Ambientes** e recomece do zero. |
+| "Nenhum ambiente configurado." | A instalação normalmente não termina sem ambientes. Se acontecer, o comando já criou pessoas, times e serviços antes de falhar: cadastre um ambiente em **Configurações → Ambientes e sessões** e recomece do zero. |
 | Erro ao conectar ou ao cifrar segredos | `DATABASE_URL` ou `ENCRYPTION_KEY` não chegaram ao comando. No desenvolvimento local, confira o `.env` em `packages/db`. |
 | Você não aparece como líder de Pagamentos | O `--me` não encontrou a pessoa (ela ainda não entrou, ou o texto difere do usuário ou e-mail salvo). O comando não avisa. Recomece do zero e informe o valor certo. |
 | Todas as versões caíram no mesmo ambiente | Os identificadores dos ambientes não são `dev`, `hml` e `prod`. Os dados vão para o último da lista. |

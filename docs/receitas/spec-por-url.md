@@ -12,7 +12,7 @@ Nesta receita o hub busca a spec do serviço numa URL HTTP(S), por ambiente, sem
 - Você tem `service:edit` e é do time do serviço, para configurar a origem, e `spec:publish` para sincronizar.
 - A URL devolve o documento OpenAPI 3.0/3.1 ou Swagger 2.0 (JSON ou YAML) com HTTP 200, em até 15 segundos e com até 5 MB.
 - A URL é alcançável **a partir do servidor do hub**, não do seu navegador. Endereços de rede privada são permitidos; `localhost` não é.
-- Para agendar a leitura (passo 5), o token gerado em **Configurações → Repositórios**.
+- Para agendar a leitura (passo 5), o token gerado em **Configurações → Conexões**, no bloco **Repositórios**.
 
 ::: warning
 Se você planeja [tirar o /docs público do ar](/receitas/tirar-docs-do-ar), lembre que o hub precisa continuar alcançando o endpoint que entrega a spec. Restrinja-o à rede interna em vez de desligá-lo.
@@ -41,8 +41,8 @@ Deve imprimir `200`. Se responder 301 ou 302, use a URL final: o hub não segue 
 
 ### 2. Configure a origem do serviço
 
-1. Abra o serviço e clique em **Editar serviço**.
-2. No painel **Origem da spec**, escolha **URL**.
+1. Abra o serviço e clique em **Editar serviço**. Pela aba **Configurações** do serviço, o botão **Alterar origem** leva ao mesmo lugar.
+2. No painel **Origem da spec**, escolha o cartão **Lida de uma URL**.
 3. Em **URL da spec**, informe o endereço. Use `{env}` no lugar do ambiente:
 
 ```text
@@ -51,15 +51,15 @@ https://pedidos.{env}.suaempresa.internal/v3/api-docs
 
 Para cada ambiente, o hub troca `{env}` pelo identificador dele (`dev`, `hml`, `prod`…), em todas as ocorrências. Sem `{env}`, todos os ambientes leem a mesma URL e ficam com a mesma spec.
 
-4. Se a URL exige autenticação, preencha **Cabeçalhos (JSON, opcional)**:
+4. Se a URL exige autenticação, abra **Detalhes opcionais** (cabeçalhos da requisição) e preencha **Cabeçalhos (JSON)**:
 
 ```json
 { "Authorization": "Bearer eyJ..." }
 ```
 
-O valor precisa ser um objeto JSON cujos valores são todos texto. Os cabeçalhos são cifrados no banco, nunca aparecem na tela nem na auditoria e são enviados em toda leitura, de todos os ambientes. Ao editar, deixar o campo em branco mantém os cabeçalhos salvos; para trocá-los, envie o JSON completo de novo. Para apagá-los, mude a origem para outra e salve; ao voltar para **URL**, preencha o endereço de novo (trocar de origem também apaga a URL).
+O valor precisa ser um objeto JSON cujos valores são todos texto. Os cabeçalhos são cifrados no banco, nunca aparecem na tela nem na auditoria e são enviados em toda leitura, de todos os ambientes. Ao editar, deixar o campo em branco mantém os cabeçalhos salvos; para trocá-los, envie o JSON completo de novo. Para apagá-los, mude a origem para outra e salve; ao voltar para **Lida de uma URL**, preencha o endereço de novo (trocar de origem também apaga a URL).
 
-5. Clique em **Salvar origem**. A URL precisa começar com `http://` ou `https://` e ter até 500 caracteres.
+5. Clique em **Salvar alterações**, na barra "Alterações não salvas" que aparece no fim da tela. A origem é salva junto com os dados do serviço. A URL precisa começar com `http://` ou `https://` e ter até 500 caracteres.
 
 ### 3. Confira as regras de segurança da leitura
 
@@ -81,14 +81,14 @@ Os limites da leitura são: 15 segundos de tempo total, 5 MB de tamanho e respos
 
 ### 4. Sincronize agora
 
-1. Volte à página do serviço e abra a aba **Documentação da API**.
-2. No painel **Ler da origem configurada**, clique em **Sincronizar agora**.
+1. Volte à página do serviço e abra a aba **Configurações**. Se o serviço ainda não tem spec, a aba **Documentação da API** traz o atalho **Sincronizar em Configurações**.
+2. No painel **Publicar spec**, clique em **Sincronizar agora**. O botão só aparece quando a origem é **Lida de uma URL** ou **Arquivo no repositório**.
 
 O hub busca a URL de cada ambiente e guarda uma versão por ambiente, com a origem **Lida de uma URL**. A mensagem de resultado lista o que foi atualizado (`dev 3.1.0, hml 3.1.0`) e o que falhou (`Falhou: prod (A origem respondeu 404.)`). Uma spec idêntica à já guardada não cria versão nova. A versão não registra branch nem commit.
 
 ### 5. Agende a leitura com cron
 
-Para manter o hub em dia, chame `POST /api/v1/sync` num agendador. O endpoint sincroniza todos os serviços não arquivados cuja origem é **Lida de uma URL** ou **Arquivo no repositório**. Gere o token em **Configurações → Repositórios** (a tela mostra o valor uma vez) e agende:
+Para manter o hub em dia, chame `POST /api/v1/sync` num agendador. O endpoint sincroniza todos os serviços não arquivados cuja origem é **Lida de uma URL** ou **Arquivo no repositório**. Gere o token em **Configurações → Conexões** (no bloco **Repositórios**, em **Sincronização agendada → Avançado: chamada e token**, botão **Gerar token**; o modal mostra o valor uma vez) e agende:
 
 ```bash
 # crontab: a cada hora, no minuto 7
@@ -100,9 +100,9 @@ Exemplos de GitHub Actions agendado e de Kubernetes CronJob, o formato da respos
 ## Como saber que deu certo
 
 - **Sincronizar agora** mostra `Atualizado: ...` sem `Falhou`.
-- No cabeçalho do serviço, **Origem da spec** mostra **Lida de uma URL** e `Última leitura` com a data, sem mensagem em vermelho.
+- No cabeçalho do serviço, **Origem da spec** mostra **Lida de uma URL** e `Sincronizada` com o tempo desde a leitura, sem mensagem em vermelho.
 - Na aba **Documentação da API**, cada ambiente tem a versão lida da URL. Passe o mouse sobre a versão para ver a origem.
-- No **Catálogo**, o serviço mostra o selo de cada ambiente com a versão.
+- No **Catálogo**, o serviço mostra uma pílula por ambiente, na coluna **Ambientes**, com a versão.
 
 ## Problemas comuns
 
@@ -112,13 +112,13 @@ O erro da última leitura aparece em vermelho no cabeçalho do serviço, no form
 |---|---|
 | `... aponta para um endereço bloqueado.` ou uma das mensagens da tabela do passo 3 | O destino é `localhost`, loopback, link-local ou metadados. Use o nome ou o IP do serviço na rede privada. |
 | `Não foi possível resolver ...` | O DNS do servidor do hub não conhece o nome. Teste de dentro do servidor do hub. |
-| `A origem respondeu 401.` ou `403.` | A URL exige autenticação: preencha **Cabeçalhos (JSON, opcional)**, ou confira se o token venceu. |
+| `A origem respondeu 401.` ou `403.` | A URL exige autenticação: preencha **Cabeçalhos (JSON)** em **Detalhes opcionais**, ou confira se o token venceu. |
 | `A origem respondeu 404.` em só um ambiente | O serviço não existe nesse ambiente, ou o nome do host não segue o padrão com `{env}`. Todos os ambientes são lidos a cada sincronização e não há como pular um. |
 | `Spec maior que 5 MB.` | A spec passou do limite, que vale para todas as origens. Reduza o documento (por exemplo, exemplos e descrições muito grandes). |
 | `fetch failed` | Falha de rede (conexão recusada, TLS, tempo esgotado de 15 segundos) ou redirecionamento. Use a URL final. |
 | Mensagem sobre a spec (por exemplo, falta de `paths`, `webhooks` ou `components`) | A URL devolve uma página HTML ou outro documento. Confira o conteúdo com `curl`. |
-| `Cabeçalhos devem ser um JSON como ...` ao salvar | O campo não é um objeto JSON, ou algum valor não é texto. |
-| Cron responde 401 | Token ainda não gerado em **Configurações → Repositórios**, ou diferente do enviado. |
+| `Os cabeçalhos devem ser um JSON como ...` ao salvar | O campo não é um objeto JSON, ou algum valor não é texto. |
+| Cron responde 401 | Token ainda não gerado em **Configurações → Conexões**, ou diferente do enviado. |
 
 ## Veja também
 

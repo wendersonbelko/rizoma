@@ -10,9 +10,9 @@ O Rizoma usa o Vitest em três níveis: regras puras no `core`, testes-guarda de
 
 | Nível | Onde | Precisa de banco | O que cobre |
 |---|---|---|---|
-| Unitários do `core` | `packages/core/test/*.test.ts` | Não | Regras puras: permissões, política de acesso, specs, ambientes, paginação, textos, temas, menu. |
-| Unitários do `web` e guardas | `apps/web/test/unit/*.test.ts` | Não | `design-system.test.ts` e `tours.test.ts`: garantem que o código segue os padrões da interface. |
-| Integração | `apps/web/test/integration/*.test.ts` | Sim (`TEST_DATABASE_URL`) | Server Actions e rotas de API com o Prisma real: acesso, administração, funcionalidades, publicação de specs. |
+| Unitários do `core` | `packages/core/test/*.test.ts` | Não | Regras puras: permissões, política de acesso, specs, ambientes, paginação, textos, temas, menu, busca e atalhos de criação. |
+| Unitários do `web` e guardas | `apps/web/test/unit/*.test.ts` | Não | `design-system.test.ts` e `tours.test.ts` garantem que o código segue os padrões da interface. Os demais cobrem regras de tela sem banco: abas de Configurações, checklist do serviço, filtros do Catálogo, matriz de permissões, frases da auditoria. |
+| Integração | `apps/web/test/integration/*.test.ts` | Sim (`TEST_DATABASE_URL`) | Server Actions e rotas de API com o Prisma real: acesso, administração, funcionalidades, publicação de specs, pessoas e times, busca global. |
 
 Quanto mais embaixo na lista, mais barato e rápido o teste. Coloque a verificação no nível mais barato que a alcança: uma regra de permissão testa-se no `core`, não subindo o banco.
 
@@ -63,28 +63,28 @@ Percorre todos os `.ts` e `.tsx` de `apps/web/src` (exceto `components/table.tsx
 | Nenhuma tela usa a classe `divide-y divide-line` à mão | Use `DataTable` (linhas de tabela) ou `CardList` (itens ricos). |
 | Toda `DataTable` recebe `pagination={...}` | Passe `<Pagination …/>` (dados do servidor) ou `<ClientPagination …/>` (lista em memória). |
 
-O terceiro caso tem uma exceção para tabelas de **tamanho fixo**: a matriz de permissões (uma linha por permissão do sistema), os endereços de uma integração (uma linha por ambiente) e as migrações mostradas no assistente. Elas ficam registradas em `FIXED_SIZE_TABLES`, com o motivo num comentário. Só acrescente uma exceção se a lista realmente não cresce com o uso, e explique o motivo no comentário, porque a revisão vai perguntar.
+O terceiro caso tem uma exceção para tabelas de **tamanho fixo**: a matriz de permissões (uma linha por permissão do sistema), as formas de login, as origens de código e os ambientes de Configurações, os endereços de uma integração (uma linha por ambiente) e as migrações mostradas no assistente. Elas ficam registradas em `FIXED_SIZE_TABLES`, com o motivo num comentário. Só acrescente uma exceção se a lista realmente não cresce com o uso, e explique o motivo no comentário, porque a revisão vai perguntar.
 
 ### `tours.test.ts`
 
-Garante que toda tela do menu tem um tour guiado que funciona. Quatro verificações:
+Garante que toda tela do menu tem um tour guiado que funciona. O tour obrigatório do primeiro acesso é um panorama único no Catálogo e não passa por este teste de cobertura: o que se cobra é um tour por tela, aberto pelo botão **?**. Quatro verificações:
 
 | Verificação | Como satisfazer |
 |---|---|
 | Toda tela de `HUB_NAV` tem um tour com **pelo menos 3 passos** | Acrescente a tela em `TOURS`, em `apps/web/src/lib/tours.ts`, usando o mesmo `href` como chave. |
 | `resolveTourKey` resolve a rota dinâmica do serviço e recusa a de edição | Se você mexer em `DYNAMIC_TOURS`, mantenha o comportamento coberto. |
 | `getTour` devolve `null` para chave desconhecida, sem lançar erro | Não mude o contrato de `getTour`. |
-| Todo seletor `[data-tour="..."]` usado nos tours existe no código de `src/` | Ponha `data-tour="id"` (ou a prop `tour="id"` dos componentes padrão) no elemento. Um passo sem `selector` é aceito. |
+| Todo seletor `[data-tour="..."]` usado nos tours existe no código de `src/` | Ponha `data-tour="id"` (ou a prop `tour="id"` dos componentes padrão) no elemento, com o texto literal: um atributo montado por variável não satisfaz o teste. Um passo sem `selector` é aceito. |
 
 O guia [Criar uma tela nova](/contribuindo/guias/nova-tela) mostra o caminho completo.
 
 ### O guarda do menu, no `core`
 
-O teste `packages/core/test/hub-nav.test.ts` tem um mapa `PAGE_GUARD` que replica a permissão que cada página exige. Ele confere que o tour obrigatório nunca leva alguém para uma tela que a própria página recusaria. **Ao acrescentar uma tela ao `HUB_NAV`, acrescente a linha correspondente em `PAGE_GUARD`** e atualize as listas fixas de rotas por papel (Leitor, Mantenedor, Admin) se a tela aparecer para eles.
+O teste `packages/core/test/hub-nav.test.ts` tem um mapa `PAGE_GUARD` que replica a permissão que cada página exige. Ele confere que a visibilidade de cada item do menu é a mesma da página: ninguém vê um item que a página recusaria com 404. Também confere os quatro grupos, a ordem, que nenhum destino se repete e que o endereço antigo `/admin/catalog` redireciona (`legacyCatalogAdminHref`). **Ao acrescentar uma tela ao `HUB_NAV`, acrescente a linha correspondente em `PAGE_GUARD`** e atualize as listas fixas de rotas por papel (Leitor, Mantenedor, Administrador) se a tela aparecer para eles. O `create-shortcuts.test.ts` faz o mesmo para os atalhos do **+ Novo** e da busca **⌘K**.
 
 ## Testes de integração
 
-Rodam as Server Actions e as rotas de API de verdade, contra um PostgreSQL com as migrações aplicadas. Cada arquivo em `apps/web/test/integration/` cobre uma área: `access`, `admin`, `features` e `ingest`.
+Rodam as Server Actions e as rotas de API de verdade, contra um PostgreSQL com as migrações aplicadas. Cada arquivo em `apps/web/test/integration/` cobre uma área: `access`, `admin`, `features`, `ingest`, `people-teams` e `search`.
 
 ### O que o `setup.ts` faz
 

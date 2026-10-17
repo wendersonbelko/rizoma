@@ -14,12 +14,12 @@ O hub é um monorepo TypeScript. As versões abaixo são as declaradas nos `pack
 | React | 19 | Interface. Componentes de formulário com estado são Client Components; a página que busca dados continua no servidor. |
 | Auth.js (`next-auth`) | 5 beta | Login. Provedores vêm do banco. A sessão é JWT. |
 | `@auth/prisma-adapter` | 2 | Liga as contas do Auth.js ao Prisma. Os tokens OAuth passam por um adaptador que os cifra. |
-| Tailwind CSS | 4 | Estilos. As cores vêm de variáveis CSS (`--color-*`) escolhidas pelo tema. |
+| Tailwind CSS | 4 | Estilos. As cores vêm de variáveis CSS (`--color-*`), geradas pelo tema Claro ou Escuro de cada pessoa a partir da cor de destaque da marca. |
 | Zod | 4 | Validação compartilhada entre tela e API, em `packages/core`. |
 | Scalar (`@scalar/api-reference-react`) | 0.9 | Renderiza a spec. Sobe sem telemetria e sem "testar requisição". |
 | React Flow (`@xyflow/react`) e Dagre | 12 e 1 | O mapa de ligações e o layout do grafo. |
 | react-markdown e remark-gfm | 10 e 4 | Regras de negócio em Markdown, sem HTML cru. |
-| driver.js | 1 | O tour do primeiro acesso. |
+| driver.js | 1 | O tour do primeiro acesso e o de cada tela. |
 | Fontes | Schibsted Grotesk e JetBrains Mono | Texto e código, servidos pelo próprio app (`@fontsource`). |
 
 ## Dados e regras

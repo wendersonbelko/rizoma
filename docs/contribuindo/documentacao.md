@@ -44,11 +44,14 @@ Os links "Como configurar o CI" **dentro do aplicativo** não usam estas variáv
 
 Imagens públicas ficam em `docs/public/` e são citadas como `/logo.svg` ou `/prints/04-catalogo.png`. O Markdown não leva o `base`: o VitePress prefixa.
 
+Uma figura envelhece mais depressa que o texto. Não renomeie nem apague um print por ele estar velho: se a interface mudou e a imagem não, diga na legenda "de uma versão anterior da interface", ou tire a imagem da página e deixe o arquivo onde está.
+
 ## O que não fazer
 
 - Não copie trechos longos de código que vão apodrecer. Aponte o arquivo e explique a regra.
 - Não documente comportamento que o código não tem. Se a página e o código divergirem, o código ganha, e a página é corrigida no mesmo PR.
-- Nomes de botões e telas precisam bater com a interface. Se você renomear um, atualize a página e o tour.
+- Nomes de botões e telas precisam bater com a interface. Se você renomear um, atualize a página e o tour. O item do menu tem o mesmo nome do título da página.
+- Rotas do app e chaves de query citadas nas páginas ficam em inglês (`/admin/services`, `?s=connections`, `?tab=rules`). O que fica em português é o caminho das páginas deste site (`/admin/servicos-e-vinculos`).
 
 ## Veja também
 

@@ -141,7 +141,7 @@ Só a resposta `sim` continua. O resultado depende da pessoa:
 | A pessoa nunca entrou | Abre uma janela de 60 minutos: o **primeiro login dela** nesse prazo vira OWNER, mesmo sem vínculo comprovado ou com a política de bloqueio |
 | `--reset-password` para quem não tem conta | Erro (código de saída 1): sem conta, use o comando sem `--reset-password` |
 
-O hub ainda precisa estar instalado; senão o comando avisa para usar o assistente em `/setup`. Tudo fica na [auditoria](/admin/auditoria) (`owner.recovery_opened`, `owner.recovered`, `user.password_reset_link`). A janela aberta pode ser cancelada em **Configurações → Sessões e recuperação**. Guia completo em [Recuperação de OWNER](/admin/recuperacao-de-owner).
+O hub ainda precisa estar instalado; senão o comando avisa para usar o assistente em `/setup`. Tudo fica na [auditoria](/admin/auditoria) (`owner.recovery_opened`, `owner.recovered`, `user.password_reset_link`). A janela aberta pode ser cancelada em **Configurações → Ambientes e sessões** (bloco **Sessões e recuperação**). Guia completo em [Recuperação de OWNER](/admin/recuperacao-de-owner).
 
 ```bash
 # Desenvolvimento ou servidor com Node
@@ -153,7 +153,7 @@ docker compose --profile app run --rm migrate pnpm admin:recover --login fulano@
 
 ## pnpm demo:seed
 
-Popula o hub com dados de demonstração: serviços com specs reais em vários ambientes, repositórios, integrações externas, variáveis, páginas de regras de negócio, times, pessoas e pedidos de acesso pendentes.
+Popula o hub com dados de demonstração: serviços com specs reais em vários ambientes, repositórios, integrações externas, variáveis, páginas de regras de negócio, times, pessoas e solicitações de acesso pendentes.
 
 ```bash
 pnpm demo:seed --me seu-usuario-ou-email

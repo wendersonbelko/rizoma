@@ -13,8 +13,8 @@ O hub **não tem uma API pública de leitura**: as specs são consultadas pela i
 | Rota | Quem chama | Autenticação | Resumo |
 |---|---|---|---|
 | `POST /api/v1/specs` | CI | Token de serviço (`ahub_...`) | Publica uma spec num ambiente |
-| `POST /api/v1/sync` | Cron | Token gerado em Configurações | Sincroniza serviços que leem a spec de URL ou repositório |
-| `POST /api/v1/hooks` | GitHub, GitLab ou Bitbucket | Segredo gerado em Configurações | Sincroniza o serviço do repositório que recebeu o push |
+| `POST /api/v1/sync` | Cron | Token gerado em Configurações → Conexões | Sincroniza serviços que leem a spec de URL ou repositório |
+| `POST /api/v1/hooks` | GitHub, GitLab ou Bitbucket | Segredo gerado em Configurações → Conexões | Sincroniza o serviço do repositório que recebeu o push |
 | `GET /api/health` | Docker, monitoramento | Nenhuma | Responde `{ "ok": true }` |
 | `GET /api/services/{slug}/dotenv` | Navegador | Sessão | Baixa o `.env` de um ambiente, sem segredos |
 | `GET /api/admin/audit` | Navegador | Sessão + `audit:read` | Exporta a auditoria em CSV |
@@ -37,7 +37,7 @@ Authorization: Bearer ahub_x7Kq...
 
 Como o token funciona:
 
-- Você gera o token em **Serviços e repositórios → Tokens**, com a permissão `token:manage`.
+- Você gera o token em **Tokens de CI** (grupo **Cadastros** do menu), com a permissão `token:manage`.
 - O token aparece **uma única vez**. O banco guarda só o hash SHA-256.
 - A validade é de 1 a 365 dias, obrigatória. Você pode revogar a qualquer momento.
 - Um token publica **somente** no serviço a que pertence.
@@ -111,7 +111,7 @@ O hub decide o ambiente de destino nesta ordem:
 2. **Regra de branch.** O primeiro ambiente, na ordem em que estão cadastrados, cuja regra casa com a branch. O prefixo `refs/heads/` é removido antes de comparar.
 3. **Sem `environment` e sem `branch`.** O ambiente marcado como produção.
 
-Se a branch não casar com nenhuma regra, a resposta é 422 com a lista de ambientes e regras (veja abaixo). Regras de branch usam glob: `*` casa um trecho sem barra, `**` casa qualquer coisa (inclusive barras) e `?` casa um caractere. Exemplos: `main`, `release/*`, `feature/**`, `hotfix-*`. Configure em **Configurações → Ambientes**; a receita [Ambientes por branch](/receitas/ambientes-por-branch) mostra exemplos.
+Se a branch não casar com nenhuma regra, a resposta é 422 com a lista de ambientes e regras (veja abaixo). Regras de branch usam glob: `*` casa um trecho sem barra, `**` casa qualquer coisa (inclusive barras) e `?` casa um caractere. Exemplos: `main`, `release/*`, `feature/**`, `hotfix-*`. Configure em **Configurações → Ambientes e sessões**; a receita [Ambientes por branch](/receitas/ambientes-por-branch) mostra exemplos.
 
 ### Limites
 
@@ -159,7 +159,7 @@ As respostas de erro são JSON no formato `{ "error": "mensagem" }`, com campos 
 - `version`: o valor de `info.version` da spec (ou `0.0.0` se a spec não tiver). Não é um contador do hub.
 - `environment`: slug do ambiente onde a versão foi gravada.
 - `unknownDependencies`: slugs declarados em [`x-api-hub.dependsOn`](/referencia/extensao-x-api-hub) que não existem no hub. É uma lista vazia quando está tudo certo.
-- `changeSummary`: o que mudou em relação à versão anterior do mesmo ambiente. `breaking` é verdadeiro quando algum path ou método foi removido. Nesse caso, se o SMTP está salvo, o hub envia e-mail para Owner e Admin ativos, para o time do serviço e para os times que dependem dele. Na primeira publicação o campo vem nulo. A resposta `unchanged` não traz resumo novo.
+- `changeSummary`: o que mudou em relação à versão anterior do mesmo ambiente. `breaking` é verdadeiro quando algum path ou método foi removido. Nesse caso, se o SMTP está salvo, o hub envia e-mail para os Proprietários e Administradores ativos, para o time do serviço e para os times que dependem dele. Na primeira publicação o campo vem nulo. A resposta `unchanged` não traz resumo novo.
 
 #### 200: sem mudança
 
@@ -215,7 +215,7 @@ Branch que não casa com nenhum ambiente:
 
 ```json
 {
-  "error": "A branch \"experimento\" não corresponde a nenhum ambiente. Informe \"environment\" ou ajuste as regras em Configurações → Ambientes.",
+  "error": "A branch \"experimento\" não corresponde a nenhum ambiente. Informe \"environment\" ou ajuste as regras em Configurações → Ambientes e sessões.",
   "environments": [
     { "slug": "dev", "branches": ["develop", "feature/**"] },
     { "slug": "hml", "branches": ["release/*", "homolog"] },
@@ -298,9 +298,9 @@ Mais cenários em [Publicar pelo GitLab CI](/receitas/publicar-pelo-gitlab-ci) e
 
 ## POST /api/v1/sync
 
-Sincroniza, de uma vez, todos os serviços cuja origem da spec é **arquivo no repositório** ou **URL**. Foi pensado para um cron (Kubernetes CronJob, GitHub Actions agendado etc.). Serviços arquivados e serviços que recebem a spec por CI ou importação manual são ignorados.
+Sincroniza, de uma vez, todos os serviços cuja origem da spec é **Arquivo no repositório** ou **Lida de uma URL**. Foi pensado para um cron (Kubernetes CronJob, GitHub Actions agendado etc.). Serviços arquivados e serviços que recebem a spec por CI ou importação manual são ignorados.
 
-O token é gerado em **Configurações → Repositórios**. A tela mostra o valor uma vez; o banco guarda só o hash. A variável `SYNC_TOKEN` não é lida.
+O token é gerado em **Configurações → Conexões**, no bloco **Repositórios**, em **Sincronização agendada → Avançado: chamada e token**. O modal mostra o valor uma vez; o banco guarda só o hash. A variável `SYNC_TOKEN` não é lida.
 
 ```bash
 curl -sS -X POST "https://apihub.suaempresa.com/api/v1/sync" \
@@ -419,7 +419,7 @@ O que importa para a instalação é a **URL de callback** de cada provedor:
 | Facebook | `facebook` | `https://apihub.suaempresa.com/api/auth/callback/facebook` |
 | OIDC (Keycloak, Okta, Auth0) | `oidc` | `https://apihub.suaempresa.com/api/auth/callback/oidc` |
 
-A base da URL vem da variável `AUTH_URL`. A tela **Configurações → Formas de login** mostra a URL pronta para copiar. Se o provedor reclamar de `redirect_uri`, veja [Solução de problemas](/referencia/solucao-de-problemas). Detalhes de cada provedor em [Provedores de login](/instalacao/provedores-de-login).
+A base da URL vem da variável `AUTH_URL`. A tela **Configurações → Conexões**, no bloco **Formas de login**, mostra a URL pronta para copiar. Se o provedor reclamar de `redirect_uri`, veja [Solução de problemas](/referencia/solucao-de-problemas). Detalhes de cada provedor em [Provedores de login](/instalacao/provedores-de-login).
 
 ## /api/setup*
 

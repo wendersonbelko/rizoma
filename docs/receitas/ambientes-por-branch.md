@@ -8,9 +8,9 @@ O hub guarda um contrato por serviço **e por ambiente**. Quando o CI publica um
 
 ## Antes de começar
 
-- Você enxerga **Configurações** no menu. Com os papéis padrão, só o OWNER tem essa permissão (`settings:manage`). Veja [Permissões](/admin/permissoes).
+- Você enxerga **Configurações → Ambientes e sessões**. Com os papéis padrão, só o Proprietário tem essa permissão (`settings:manage`); o Administrador abre Configurações, mas só vê a aba **Aparência**. Veja [Permissões](/admin/permissoes).
 - Você sabe qual branch (ou padrão de branch) faz deploy em cada ambiente. Anote antes de abrir a tela.
-- Para o teste do passo 7, você tem o token de um serviço (aba **Tokens** em **Serviços e repositórios**) e `curl` instalado. Se ainda não tem token, veja [Do zero ao primeiro serviço](/receitas/primeiro-servico).
+- Para o teste do passo 7, você tem o token de um serviço (em **Tokens de CI**, no grupo **Cadastros** do menu) e `curl` instalado. Se ainda não tem token, veja [Do zero ao primeiro serviço](/receitas/primeiro-servico).
 
 ### Como o hub escolhe o ambiente
 
@@ -32,27 +32,27 @@ Por isso três coisas importam: **as regras de branch**, **a ordem da lista** (o
 
 ### 1. Abra a tela de ambientes
 
-No menu, abra **Configurações** e escolha a seção **Ambientes** (o endereço termina em `/admin/settings?s=environments`). Se o assistente de instalação já rodou, você vai ver os ambientes que criou lá, numa tabela. **Adicionar ambiente** e **Editar** abrem um modal.
+No menu, abra **Configurações** e escolha a aba **Ambientes e sessões** (o endereço termina em `/admin/settings?s=environments`). O primeiro bloco, **Ambientes**, mostra numa tabela os ambientes que o assistente de instalação criou, com as colunas **Nome**, **Identificador** e **Branches**. **Adicionar ambiente** e **Editar** abrem um modal.
 
 ### 2. Cadastre os ambientes
 
-Clique em **+ Adicionar ambiente** para cada um e preencha:
+Clique em **Adicionar ambiente** para cada um e preencha:
 
 | Campo | O que colocar |
 |---|---|
 | **Nome** | Como as pessoas veem (por exemplo, `Homologação`). De 2 a 40 caracteres. |
 | **Identificador** | O slug do ambiente (por exemplo, `hml`). Letras minúsculas, números e hífen, até 20 caracteres. Ele aparece na URL (`?env=hml`), no `{env}` da leitura por URL e no parâmetro `environment` da API. |
-| **Cor** | Cor do selo do ambiente no catálogo e na página do serviço. |
+| **Cor** | Cor da pílula do ambiente no catálogo e na página do serviço. |
 
-Você pode ter até 10 ambientes, com qualquer nome: `dev`, `hml`, `prod`, `sandbox`, `qa`, `staging`.
+Você pode ter até 10 ambientes, com qualquer nome: `dev`, `hml`, `prod`, `sandbox`, `qa`, `staging`. Ao terminar o modal, clique em **Criar ambiente**.
 
 ::: warning Escolha bem o identificador
-Depois que o ambiente recebe uma spec ou uma variável, o identificador não pode mais mudar (veja o passo 8). O **Nome**, a **Cor** e as regras mudam quando você quiser.
+Depois que o ambiente é criado, o identificador fica travado: o campo vira só leitura em **Editar** (veja o passo 8). O **Nome**, a **Cor** e as regras mudam quando você quiser.
 :::
 
 ### 3. Escreva as regras de branch
 
-No campo **Branches**, digite uma regra e clique em **+**. Todo ambiente precisa de pelo menos uma. A regra precisa casar com o nome inteiro da branch, e maiúsculas e minúsculas contam.
+No campo **Branches** do modal, digite uma regra e clique em **+** (**Adicionar branch**). Todo ambiente precisa de pelo menos uma. A regra precisa casar com o nome inteiro da branch, e maiúsculas e minúsculas contam.
 
 | Curinga | Significa |
 |---|---|
@@ -87,20 +87,20 @@ Num pipeline disparado por tag, o "nome da branch" que o CI manda é o nome da t
 
 ### 4. Ponha os ambientes na ordem certa
 
-O hub testa os ambientes de cima para baixo e **usa o primeiro que casar**. Use **Subir** e **Descer** para reordenar. A regra prática: **coloque as regras específicas antes das genéricas**.
+O hub testa os ambientes de cima para baixo e **usa o primeiro que casar**. Use **Subir** e **Descer**, na linha do ambiente, para reordenar: cada clique salva na hora, sem modal. A regra prática: **coloque as regras específicas antes das genéricas**.
 
 Na estratégia "Só `main`", por exemplo, `dev` usa `**` (casa com tudo). Se ele ficar no topo, `main` também cai em `dev`. Deixe `prod` (`main`) acima de `dev` (`**`).
 
-A ordem da lista também é a ordem em que os ambientes aparecem no seletor da página do serviço e nos selos do catálogo.
+A ordem da lista também é a ordem em que os ambientes aparecem no seletor da página do serviço e nas pílulas do catálogo.
 
 ### 5. Marque a produção e defina a branch de leitura
 
-- Marque **É produção** no ambiente de produção. Ele ganha um escudo na interface, abre por padrão na página do serviço e é o destino quando o CI publica sem `branch` e sem `environment`. Marque só um.
-- Em **Branch de leitura**, informe a branch de onde o hub lê o arquivo da spec quando o serviço usa a origem **Arquivo no repositório** (por exemplo, `main` em produção e `develop` em dev). Sem ela, o **Sincronizar agora** mostra falha para aquele ambiente. Veja [Ler a spec do repositório](/receitas/spec-do-repositorio).
+- Marque **É produção** no ambiente de produção. Ele ganha um escudo na interface (e a etiqueta **Produção** na tabela), abre por padrão na página do serviço e é o destino quando o CI publica sem `branch` e sem `environment`. Marque só um.
+- Em **Avançado**, no campo **Branch de leitura**, informe a branch de onde o hub lê o arquivo da spec quando o serviço usa a origem **Arquivo no repositório** (por exemplo, `main` em produção e `develop` em dev). Sem ela, o **Sincronizar agora** mostra falha para aquele ambiente. Veja [Ler a spec do repositório](/receitas/spec-do-repositorio).
 
 ### 6. Salve
 
-Clique em **Salvar ambientes**. A tela responde "Ambientes salvos. Novas publicações do CI já usam as regras de branch." Não é preciso reiniciar nada.
+O botão do modal salva na hora: **Criar ambiente** num ambiente novo e **Salvar ambiente** na edição. Subir e Descer também salvam sozinhos. Não existe um botão **Salvar ambientes** para a tela toda. A tela responde "Ambientes salvos. Novas publicações do CI já usam as regras de branch." Não é preciso reiniciar nada.
 
 ### 7. Teste com uma publicação
 
@@ -136,7 +136,7 @@ Agora provoque o erro de propósito, com uma branch que nenhuma regra cobre (`br
 
 ```json
 {
-  "error": "A branch \"experimento/x\" não corresponde a nenhum ambiente. Informe \"environment\" ou ajuste as regras em Configurações → Ambientes.",
+  "error": "A branch \"experimento/x\" não corresponde a nenhum ambiente. Informe \"environment\" ou ajuste as regras em Configurações → Ambientes e sessões.",
   "environments": [
     { "slug": "dev", "branches": ["develop", "feature/**"] },
     { "slug": "hml", "branches": ["release/*", "hotfix/*"] },
@@ -149,17 +149,17 @@ Para publicar num ambiente específico, ignorando a branch, acrescente `&environ
 
 ### 8. Renomeie ou remova um ambiente
 
-- **Renomear:** troque o **Nome**. Mantenha o **Identificador**.
-- **Remover:** clique em **Remover** no ambiente e depois em **Salvar ambientes**. O botão só aparece quando existe mais de um ambiente. Um ambiente só pode ser removido se **não tiver specs nem variáveis** (RN-92). Se tiver, o hub recusa e sugere renomear.
+- **Renomear:** clique em **Editar** e troque o **Nome**. O **Identificador** não muda: o campo fica só leitura.
+- **Remover:** no fim da aba, na **Zona de perigo**, clique em **Remover ambiente** na linha do ambiente (**Remover o ambiente** seguido do nome) e digite o nome dele para confirmar. A ação não tem desfazer. Ela só aparece quando existe mais de um ambiente. Um ambiente só pode ser removido se **não tiver specs nem variáveis** (RN-92). Se tiver, o hub recusa e sugere renomear.
 
-O hub reconhece o ambiente pelo identificador. Trocar o identificador de um ambiente que já tem dados é tratado como remover o antigo e criar um novo, e por isso é recusado. Ambientes de teste que receberam uma spec no passo 7 também deixam de poder ser removidos.
+O hub reconhece o ambiente pelo identificador. Por isso a tela não deixa trocá-lo depois de criado: seria o mesmo que remover o antigo e criar um novo, e o hub recusa isso quando o ambiente já tem dados. Ambientes de teste que receberam uma spec no passo 7 também deixam de poder ser removidos.
 
 ## Como saber que deu certo
 
 - A resposta do `curl` traz o `environment` esperado para cada branch testada.
-- No **Catálogo**, o serviço de teste mostra um selo com a versão em cada ambiente que recebeu spec.
-- Na página do serviço, o seletor de ambientes aparece na ordem que você definiu, e o de produção mostra o escudo e o aviso "Você está vendo produção."
-- Em **Auditoria**, o tipo **Configurações** registra "Ambientes atualizados", e o tipo **Publicação de specs** registra cada publicação do CI com o ambiente.
+- No **Catálogo**, o serviço de teste mostra uma pílula com a versão, na coluna **Ambientes**, para cada ambiente que recebeu spec.
+- Na página do serviço, o seletor de ambientes aparece na ordem que você definiu, e o de produção mostra o escudo e a etiqueta "prod".
+- Em **Auditoria**, o grupo **Configurações** registra a atualização dos ambientes, e o grupo **Publicação de specs** registra cada publicação do CI com o ambiente.
 
 ## Problemas comuns
 

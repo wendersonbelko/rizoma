@@ -11,7 +11,7 @@ Esta receita adiciona um job ao `.gitlab-ci.yml` que envia a spec OpenAPI do ser
 - O serviço já está cadastrado no hub. Se não estiver, veja [Do zero ao primeiro serviço](/receitas/primeiro-servico).
 - Você tem `token:manage` e é do time responsável pelo serviço (ou tem `service:edit_any`), para gerar o token.
 - Você é Maintainer do projeto no GitLab (é preciso para criar variáveis de CI).
-- Os ambientes e as regras de branch estão configurados em **Configurações → Ambientes**. Veja [Ambientes por branch](/receitas/ambientes-por-branch).
+- Os ambientes e as regras de branch estão configurados em **Configurações → Ambientes e sessões**. Veja [Ambientes por branch](/receitas/ambientes-por-branch).
 - O runner alcança o hub pela rede. Se o hub só abre na rede interna, use um runner registrado dentro dela.
 - A spec existe como arquivo (`openapi.yaml` ou `openapi.json`) ou é gerada num job anterior.
 
@@ -19,9 +19,9 @@ Esta receita adiciona um job ao `.gitlab-ci.yml` que envia a spec OpenAPI do ser
 
 ### 1. Gere o token de publicação
 
-1. No hub, abra **Serviços e repositórios → Tokens**.
-2. Clique em **Novo token**, escolha o **Serviço**, dê um **Nome** (`gitlab-ci`) e defina a **Validade (dias)**, de 1 a 365.
-3. Clique em **Gerar token** e copie o valor (`ahub_...`). Ele só aparece uma vez.
+1. No hub, abra **Tokens de CI** (grupo **Cadastros** do menu).
+2. Clique em **Novo token**, escolha o **Serviço** (o campo começa vazio) e dê um **Nome do token** (`gitlab-ci`). A **Validade (dias)**, de 1 a 365, fica em **Detalhes opcionais**; o padrão é 90.
+3. Clique em **Gerar token**, depois em **Copiar token**. O valor (`ahub_...`) só aparece uma vez, nesse modal.
 
 ### 2. Crie as variáveis de CI
 
@@ -154,8 +154,8 @@ Cada slug vira uma ligação **consome a API de**. Slugs desconhecidos voltam em
 ## Como saber que deu certo
 
 - O job termina verde e o log termina com o JSON `"status": "published"` (HTTP 201) ou `"status": "unchanged"` (HTTP 200, spec idêntica à já publicada).
-- No hub, o **Catálogo** mostra o selo do ambiente com a versão nova. Na aba **Documentação da API** do serviço, a versão aparece com o marcador de atual.
-- Em **Serviços e repositórios → Tokens**, o **Último uso** do token foi atualizado.
+- No hub, o **Catálogo** mostra a pílula do ambiente, na coluna **Ambientes**, com a versão nova. Na aba **Documentação da API** do serviço, a versão aparece com o marcador de atual.
+- Em **Tokens de CI**, o **Último uso** do token foi atualizado.
 
 A tabela completa de respostas (201, 200, 401, 413, 422, 429) está em [Publicar pelo GitHub Actions](/receitas/publicar-pelo-github-actions#como-saber-que-deu-certo).
 
@@ -165,7 +165,7 @@ A tabela completa de respostas (201, 200, 401, 413, 422, 429) está em [Publicar
 |---|---|
 | 401 `Token ausente.` | A variável `API_HUB_TOKEN` está vazia no job. Se ela é protegida, a branch ou a tag também precisa ser protegida. |
 | 401 com token inválido, revogado ou expirado | Gere outro token e atualize a variável. Arquivar o serviço revoga os tokens dele. |
-| 422 dizendo que a branch não corresponde a nenhum ambiente | Ajuste as regras em **Configurações → Ambientes** ou use `environment`. A resposta lista os ambientes e as regras. |
+| 422 dizendo que a branch não corresponde a nenhum ambiente | Ajuste as regras em **Configurações → Ambientes e sessões** ou use `environment`. A resposta lista os ambientes e as regras. |
 | 422 `Corpo inválido` | Você enviou o arquivo com `Content-Type: application/json`. Use `application/yaml` para o arquivo cru. |
 | O pipeline não roda o job | A branch não casa com a regra de `rules`, ou é um pipeline de merge request (`CI_COMMIT_BRANCH` fica vazio). |
 | `needs` recusado ao criar o pipeline | Os dois jobs precisam das mesmas `rules`. |

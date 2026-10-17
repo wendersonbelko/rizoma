@@ -31,12 +31,23 @@ Comece pelo sintoma. Os passos longos estão nas páginas de instalação; esta 
 | Sintoma | O que fazer |
 |---|---|
 | `redirect_uri_mismatch` ou erro de URL de retorno | `AUTH_URL`, a URL aberta no navegador e a callback cadastrada no provedor precisam ser o mesmo host. Em local, use `http://localhost:3000` nos três, não misture com `127.0.0.1`. |
-| "A instalação ainda não terminou" | Até concluir o assistente, só a pessoa definida como futuro OWNER entra (RN-61). |
+| "A instalação ainda não terminou" | Até concluir o assistente, só a pessoa definida como futuro Proprietário entra (RN-61). |
 | "Você ficaria sem forma de entrar" | O hub recusa desligar a única forma de login da sua conta (RN-01). |
 | Login por senha bloqueado | Cinco falhas seguidas bloqueiam por 15 minutos (RN-105). |
-| Todo mundo foi deslogado | Alguém usou **Encerrar todas as sessões**, suspendeu a conta, trocou a senha ou a recuperação de OWNER invalidou os JWTs antigos. |
+| Todo mundo foi deslogado | Alguém usou **Encerrar todas as sessões**, suspendeu a conta, trocou a senha ou a recuperação de Proprietário invalidou os JWTs antigos. |
 
 Atrás de um proxy, `AUTH_URL` tem de ser a URL pública com HTTPS, e o proxy precisa encaminhar `X-Forwarded-Proto` e `X-Forwarded-Host`. Veja [HTTPS com proxy](/instalacao/proxy-https).
+
+## Telas e menus
+
+| Sintoma | O que fazer |
+|---|---|
+| Um item do menu lateral não aparece, ou a página responde "não encontrada" | O menu só mostra o que a sua permissão abre, e uma página sem permissão responde como se não existisse (RN-23). Confira o papel com quem administra. Por exemplo, **Serviços** pede `service:create` ou `service:edit`; **Tokens de CI**, `token:manage`; **Configurações**, `settings:manage` ou `appearance:manage`. |
+| `/admin/catalog` ou `/admin/appearance` não abrem a tela de antes | Os endereços antigos redirecionam: `/admin/catalog?t=…` vai para **Serviços**, **Repositórios**, **Vínculos** ou **Tokens de CI**, e `/admin/appearance` vai para a aba **Aparência** de **Configurações**. |
+| O modal pergunta "Descartar o que você digitou?" | É o modal-padrão: fechar com Esc, clique fora, × ou **Cancelar** depois de digitar pede confirmação. Escolha **Continuar editando** ou **Descartar**. |
+| Não aparece o botão **Salvar** em **Editar serviço** | A barra "Alterações não salvas", com **Descartar** e **Salvar alterações**, só aparece depois de uma mudança. |
+| **Ctrl+K** (**⌘K**) não abre a busca | A busca fica desligada durante o tour guiado e não abre por cima de outro modal. Feche o modal e tente de novo, ou clique em **Buscar**. |
+| O hub abre no tema errado | A escolha é de cada pessoa. Abra o menu do seu nome, no pé da barra lateral, e escolha **Claro**, **Escuro** ou **Sistema** (este segue o sistema operacional). |
 
 ## Publicação pelo CI
 

@@ -20,6 +20,10 @@ Esta página registra as decisões de arquitetura mais importantes do Rizoma, no
 | [ADR-10](#adr-10-limite-de-requisições-em-memória) | Limite de requisições em memória | Aceita, com limitação |
 | [ADR-11](#adr-11-tour-guiado-obrigatório) | Tour guiado obrigatório | Aceita |
 | [ADR-12](#adr-12-design-system-com-testes-guarda-e-paginação-por-url) | Design system com testes-guarda e paginação por URL | Aceita |
+| [ADR-13](#adr-13-tema-por-pessoa-e-marca-no-admin) | Tema por pessoa e marca no admin | Aceita |
+| [ADR-14](#adr-14-modal-padrão-para-criar-e-editar) | Modal-padrão para criar e editar | Aceita |
+| [ADR-15](#adr-15-o-item-do-menu-tem-o-título-da-página) | O item do menu tem o título da página | Aceita |
+| [ADR-16](#adr-16-busca-global-e-atalhos-de-criação-por-hash) | Busca global e atalhos de criação por hash | Aceita |
 
 ### ADR-01 — Monólito Next.js com UI e API juntas
 
@@ -49,7 +53,7 @@ Esta página registra as decisões de arquitetura mais importantes do Rizoma, no
 
 ### ADR-03 — Prisma e PostgreSQL, e só PostgreSQL hoje
 
-**Contexto.** O modelo é relacional e precisa de transações e restrições de unicidade (por exemplo, uma versão por serviço, ambiente e checksum). Ele também usa listas e JSON com naturalidade: tags, regras de branch, organizações e domínios aceitos, metadados de auditoria e cores do tema.
+**Contexto.** O modelo é relacional e precisa de transações e restrições de unicidade (por exemplo, uma versão por serviço, ambiente e checksum). Ele também usa listas e JSON com naturalidade: tags, regras de branch, organizações e domínios aceitos, metadados de auditoria e a cor de destaque da marca.
 
 **Decisão.** Prisma 6 com PostgreSQL 16, usando **arrays e JSON nativos** do Postgres. O Prisma roda sem o motor nativo em Rust (`engineType = "client"`): as consultas são compiladas em WASM e executadas pelo driver `pg` (`@prisma/adapter-pg`). Isso deixa a imagem menor e sem binário por plataforma. As migrações ficam versionadas no repositório e são aplicadas pelo container `migrate` com `prisma migrate deploy`. A etapa "Banco de dados" do assistente já lista MySQL, SQLite e SQL Server como "Em breve", mas só o PostgreSQL funciona.
 
@@ -91,13 +95,13 @@ Esta página registra as decisões de arquitetura mais importantes do Rizoma, no
 
 **Contexto.** Responder "sem permissão" (403) a uma rota administrativa confirma a existência dela para quem não deveria saber (RN-23, RN-S10).
 
-**Decisão.** `requirePermission()` chama `notFound()` quando falta a permissão. As rotas de API com controle próprio (o CSV da auditoria e o download do `.env`) também respondem 404. O menu esconde os itens que a pessoa não pode abrir, e o tour obrigatório percorre só as telas visíveis. Por isso a permissão do item de menu é a mesma que a página exige.
+**Decisão.** `requirePermission()` chama `notFound()` quando falta a permissão. As rotas de API com controle próprio (o CSV da auditoria e o download do `.env`) também respondem 404. O menu esconde os itens que a pessoa não pode abrir. Por isso a permissão do item de menu é a mesma que a página exige: a página de cadastro chama `requireNavAccess`, que lê a visibilidade do mesmo item em `HUB_NAV`.
 
 **Consequências.**
 
 - (+) Não há enumeração de rotas administrativas.
 - (−) Quem tem uma matriz de permissões customizada pode estranhar um 404 onde esperava um "sem permissão". A tela **Permissões** e o [glossário](/referencia/glossario) ajudam a explicar.
-- (−) Menu, tour e página precisam concordar sobre a permissão de cada tela. Um teste garante o tour para toda tela do menu, e o item **Serviços e repositórios** usa só `link:edit` justamente para não levar ninguém a um 404.
+- (−) Menu, tour e página precisam concordar sobre a permissão de cada tela. A página lê a regra do próprio item do menu, então não há duas cópias para divergir, e um teste garante um tour para toda tela do menu. Cada item pede só o que a tela usa: **Serviços** abre com `service:create` ou `service:edit`, **Repositórios** e **Vínculos** com `link:edit`, **Tokens de CI** com `token:manage` e **Times** com `team:manage`.
 
 ### ADR-07 — Segredos com AES-256-GCM e chave fora do banco
 
@@ -156,20 +160,20 @@ Esta página registra as decisões de arquitetura mais importantes do Rizoma, no
 
 **Contexto.** O hub tem várias telas, e parte do problema que ele resolve é o custo de apresentar as coisas a cada pessoa nova. A auditoria de UX apontou que o primeiro contato precisava ser mais guiado.
 
-**Decisão.** Todo mundo faz um tour obrigatório no primeiro acesso, um panorama só no Catálogo: o menu inteiro, a parte de consulta, a parte de administração e a interrogação. Não percorre as outras telas. O progresso é guardado por pessoa (`tourStep` e `tourCompletedAt`). O hub fica bloqueado até a pessoa concluir: um portão no layout redireciona para o Catálogo, e uma guarda no cliente cobre a navegação interna. A ação que avança o tour é idempotente, para aguentar clique duplo. Depois, o botão **?** de toda tela oferece o tour daquela tela sob demanda. O destaque de elementos usa o driver.js.
+**Decisão.** Todo mundo faz um tour obrigatório no primeiro acesso, um panorama só no Catálogo: o menu completo, cada um dos quatro grupos (**Explorar**, **Cadastros**, **Pessoas** e **Sistema**), a busca ⌘K, o **+ Novo** e a interrogação. Não percorre as outras telas. A busca e o **+ Novo** ficam desligados durante o tour. O progresso é guardado por pessoa (`tourStep` e `tourCompletedAt`). O hub fica bloqueado até a pessoa concluir: um portão no layout redireciona para o Catálogo, e uma guarda no cliente cobre a navegação interna. A ação que avança o tour é idempotente, para aguentar clique duplo. Depois, o botão **?** de toda tela oferece o tour daquela tela sob demanda. O destaque de elementos usa o driver.js.
 
 **Consequências.**
 
 - (+) Um onboarding uniforme, sem depender de quem apresenta.
-- (+) Um teste garante que toda tela do menu tem tour, com pelo menos 3 passos. Se a permissão da pessoa mudar no meio do tour, o índice se ajusta ao que ela ainda vê.
-- (−) É uma fricção: não dá para pular na primeira vez, nem para o OWNER.
+- (+) Um teste garante que toda tela do menu tem tour, com pelo menos 3 passos.
+- (−) É uma fricção: não dá para pular na primeira vez, nem para o Proprietário.
 - (−) O texto do tour e os seletores `data-tour` precisam acompanhar a interface. O teste cobre a existência do tour, não a qualidade do texto.
 
 ### ADR-12 — Design system com testes-guarda e paginação por URL
 
 **Contexto.** O hub tem muitas listagens (catálogo, pessoas, times, vínculos, tokens, variáveis, integrações, auditoria). Sem um padrão, cada tela ganha espaçamentos, estados vazios e paginação próprios, e listas grandes viram um problema de desempenho e de usabilidade.
 
-**Decisão.** Um conjunto único de componentes: `DataTable` com `THead`, `Th`, `TBody`, `Tr`, `Td`, `CellTitle` e `RowActions`, `CardList`, `EmptyState`, `Badge`, `Notice`, `TabNav` e `FilterChips`. O teste `design-system.test.ts` **falha** se alguém montar `<table>` à mão, uma lista com divisórias manuais ou uma `DataTable` de listagem sem paginação. Só as tabelas de tamanho fixo ficam de fora, cada uma com o motivo registrado. A paginação vive na URL (`?page=` e `?size=`, com 10, 20, 50 ou 100 por página, padrão 10) e preserva os demais parâmetros, como filtros e abas. Telas com duas listagens usam nomes de parâmetro diferentes na segunda. Quando o banco pagina (`skip` e `take`), o total é real. Quando o filtro só existe em memória, pagina-se a lista já carregada.
+**Decisão.** Um conjunto único de componentes: `DataTable` com `THead`, `Th`, `TBody`, `Tr`, `Td`, `CellTitle` e `RowActions`, `CardList`, `EmptyState`, `Badge`, `Notice`, `TabNav`, `FilterChips`, `FormModal`, `Breadcrumb` e `DangerZone`. O teste `design-system.test.ts` **falha** se alguém montar `<table>` à mão, uma lista com divisórias manuais ou uma `DataTable` de listagem sem paginação. Só as tabelas de tamanho fixo ficam de fora, cada uma com o motivo registrado. A paginação vive na URL (`?page=` e `?size=`, com 10, 20, 50 ou 100 por página, padrão 10) e preserva os demais parâmetros, como filtros e abas. Telas com duas listagens usam nomes de parâmetro diferentes na segunda. Quando o banco pagina (`skip` e `take`), o total é real. Quando o filtro só existe em memória, pagina-se a lista já carregada.
 
 **Consequências.**
 
@@ -178,6 +182,63 @@ Esta página registra as decisões de arquitetura mais importantes do Rizoma, no
 - (+) O padrão não depende da disciplina de quem revisa: o teste barra o desvio.
 - (−) Uma listagem nova precisa seguir o padrão, ou registrar a exceção no teste.
 - (−) Paginar uma lista em memória carrega tudo antes. Isso só vale para listas de tamanho moderado.
+
+### ADR-13 — Tema por pessoa e marca no admin
+
+**Contexto.** Antes, o administrador escolhia entre cinco temas prontos e podia sobrescrever as nove cores da paleta, e a escolha valia para todo mundo. Claro ou escuro é preferência de quem lê, e uma paleta editável à mão produzia combinações ilegíveis, que só eram recusadas na hora de salvar (achado F5 da auditoria de UX).
+
+**Decisão.** Dois temas fixos, **Claro** e **Escuro**, definidos em `packages/core/src/themes.ts`. Cada pessoa escolhe **Claro**, **Escuro** ou **Sistema** no menu da conta. A escolha vai para `User.themePreference` (enum `ThemePreference`, padrão `SYSTEM`), que vale em qualquer aparelho, e para o cookie `rizoma-theme`, que o servidor lê para pintar o `<html>` já no tema certo, sem piscar. Trocar de tema não entra na auditoria. O administrador define só a **marca**: o nome do sistema e a cor de destaque, guardados em `Installation.themeOverrides` como `{ accent }`, na aba **Aparência** de **Configurações** (`appearance:manage`). As duas paletas nascem da cor de destaque. No tema claro, uma cor que deixaria links e botões abaixo de 4,5:1 é recusada com a explicação (RN-112); no escuro, o destaque clareia até ficar legível. Os tokens novos são `raised` (o terceiro degrau de elevação, para o modal), `line-strong` (borda de campo, com pelo menos 3:1), `overlay` e `shadow`. A coluna `Installation.themeId` ficou como legado e não é mais lida.
+
+**Consequências.**
+
+- (+) Cada pessoa usa o tema que prefere sem afetar as outras.
+- (+) Claro e escuro nascem do mesmo destaque, então ficam sempre juntos e legíveis. O administrador não monta paleta.
+- (+) Sem piscada de tema no carregamento, por causa do cookie.
+- (−) A empresa não escolhe uma paleta completa, só a cor de destaque.
+- (−) A preferência vive em dois lugares: o banco vale entre aparelhos e o cookie vale para o primeiro desenho da página.
+- (−) **Sistema** depende de `prefers-color-scheme` do navegador. `themeId` continua na tabela até uma migração futura removê-lo.
+
+### ADR-14 — Modal-padrão para criar e editar
+
+**Contexto.** Cada tela abria o formulário de um jeito: botões em lugares diferentes, o que a pessoa digitou se perdia ao fechar sem aviso, várias telas tinham mais de um **Salvar** e as ações destrutivas tinham um estilo para cada uma (achados M1, M5, F1 e F3).
+
+**Decisão.** Todo formulário de criar ou editar abre o mesmo `FormModal`: cabeçalho com título e ×, corpo com rolagem e rodapé fixo (`ModalActions`) com **Cancelar** à esquerda e a ação principal, em verbo e objeto, à direita. Esc, clique fora, × e **Cancelar** pedem "Descartar o que você digitou?" se algo foi digitado. O modal abre pelo endereço (`#new-service`), e o foco volta ao botão que abriu. Campos obrigatórios levam `*` e começam vazios; os opcionais ficam em **Detalhes opcionais**. Um modal que revela um segredo (token, link de convite, segredo de webhook) continua aberto depois do sucesso, com **Copiar**. Edição de uma página inteira usa `DirtyForm`: a barra **Alterações não salvas**, com **Descartar** e **Salvar**, só aparece quando há mudança, e a página avisa antes de sair. Ação destrutiva usa `DangerZone` e `DangerAction`, num estilo só: reversível pede confirmação simples, irreversível pede digitar o nome ou uma palavra, e a remoção de uma linha que dá para recriar usa `UndoButton`, com **Desfazer**.
+
+**Consequências.**
+
+- (+) Um padrão previsível: a pessoa sabe onde está o botão que confirma e o que cancela.
+- (+) Nada digitado se perde sem aviso, e o foco volta para onde estava.
+- (+) A mesma peça atende o ⌘K e o **+ Novo** (ADR-16), porque o modal abre por hash.
+- (−) Todo formulário novo precisa seguir o padrão, e o guia [Criar uma tela nova](/contribuindo/guias/nova-tela) descreve como.
+- (−) O `<dialog>` nativo exige cuidado com foco, Esc e clique no fundo, e o `DirtyForm` mede a mudança comparando o conteúdo do formulário, então um campo que muda sem evento do usuário depende do observador de mutações.
+
+### ADR-15 — O item do menu tem o título da página
+
+**Contexto.** O item **Serviços e repositórios** abria uma página chamada "Serviços e vínculos", e **Vínculos** e **Tokens** eram abas que o menu não mostrava. O menu não dizia onde cada coisa morava, e **Aparência** era uma página à parte (achados N1 e N3).
+
+**Decisão.** Uma regra só: o item do menu é o título da página. A página com quatro abas (`/admin/catalog`) virou quatro páginas: `/admin/services`, `/admin/repositories`, `/admin/links` e `/admin/tokens`, com o que há de comum em `admin/_registry`. O menu tem doze itens em quatro grupos (**Explorar**, **Cadastros**, **Pessoas** e **Sistema**), definidos em `HUB_NAV` (`packages/core/src/hub-nav.ts`), e a visibilidade de cada item é a guarda da página. **Aparência** virou aba de **Configurações**, que passou a ter quatro abas (`?s=organization`, `connections`, `environments` e `appearance`), cada uma com a própria permissão. Os endereços antigos continuam valendo: `/admin/catalog?t=…`, `/admin/appearance` e os valores antigos de `?s=` redirecionam para a página ou a aba nova.
+
+**Consequências.**
+
+- (+) Menu, título e endereço dizem a mesma coisa, e cada cadastro tem URL própria, que dá para compartilhar, e tour próprio.
+- (+) Quem vê o item abre a tela. Quem não tem a permissão recebe 404, como no ADR-06.
+- (−) Quatro páginas parecidas: o que é comum fica em `admin/_registry` e a regra é não duplicar.
+- (−) **Configurações** abre para quem tem `settings:manage` ou `appearance:manage`, e cada aba confere a permissão dela. A regra de visibilidade tem duas partes.
+- (−) Os redirecionamentos precisam ficar enquanto houver links salvos nos favoritos das pessoas.
+
+### ADR-16 — Busca global e atalhos de criação por hash
+
+**Contexto.** Com doze destinos e cadastros em páginas separadas, achar um serviço ou criar algo exigia navegar pelo menu (achados da p. 13 e da p. 17 da auditoria de UX).
+
+**Decisão.** Uma busca global, aberta por **Ctrl+K**/**⌘K** ou pelo botão **Buscar**, com três seções: **Ir para** (os itens do menu que a pessoa vê), **Serviços** e **Criar**. Os serviços vêm de uma Server Action (`searchServices`), a partir de 2 letras, por nome, slug, descrição ou endpoint, com a visibilidade de RN-30 e no máximo 8 resultados. A relevância é uma função pura no `core` (`command-search.ts`). A seção **Criar** e o botão **+ Novo** vêm da mesma lista, `CREATE_SHORTCUTS` (`create-shortcuts.ts`), filtrada pela permissão do botão de criar da própria tela. Cada atalho aponta para `/rota#id-do-modal`, e o `FormModal` abre quando o hash aparece. Os dois ficam desligados durante um tour, e a busca não abre por cima de outro modal.
+
+**Consequências.**
+
+- (+) Um caminho só para criar, igual no teclado, no botão e na busca, sem tela intermediária.
+- (+) A regra de ordenação e de permissão é pura e testável sem navegador.
+- (−) Os ids dos modais (`new-service`, `new-token` e os outros) são um contrato entre a lista de atalhos e cada tela. Um teste confere que o destino é uma rota do hub com o `#id`.
+- (−) Esconder o atalho não é autorização: a Server Action de cada cadastro confere a permissão de novo (ADR-06).
+- (−) Cada busca de serviço é uma ida ao servidor, com uma pequena espera depois da última tecla.
 
 ## Como propor uma nova decisão
 
@@ -188,4 +249,4 @@ Ao mudar algo estrutural (uma tecnologia, um limite de segurança, um contrato p
 - [Visão geral e princípios](/arquitetura/visao-geral): os princípios que essas decisões servem.
 - [Autenticação e acesso](/arquitetura/autenticacao-e-acesso): as decisões 04 a 06 em detalhe.
 - [Ingestão de specs](/arquitetura/ingestao-de-specs): a decisão 08 em detalhe.
-- [Interface e design system](/arquitetura/interface): as decisões 11 e 12 em detalhe.
+- [Interface e design system](/arquitetura/interface): as decisões 11 a 16 em detalhe.

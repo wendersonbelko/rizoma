@@ -30,7 +30,7 @@ Uma. Não é multiempresa. Cada instalação tem a própria organização, os pr
 
 ## Como uma pessoa da empresa entra sem pedir nada?
 
-Ela entra com uma forma de login que comprova vínculo (GitHub de uma organização aceita, ou e-mail verificado de um domínio aceito) e a liberação automática está ligada. O papel inicial é VIEWER. O passo a passo está em [Acesso automático](/receitas/acesso-automatico-pela-organizacao).
+Ela entra com uma forma de login que comprova vínculo (GitHub de uma organização aceita, ou e-mail verificado de um domínio aceito) e a liberação automática está ligada. O papel inicial é Leitor. O passo a passo está em [Acesso automático](/receitas/acesso-automatico-pela-organizacao).
 
 ## Facebook ou e-mail com senha comprovam que a pessoa é da empresa?
 
@@ -38,7 +38,7 @@ Não. Essas formas só entram por convite ou por aprovação. Veja [Convidar por
 
 ## O hub manda o e-mail do convite?
 
-Com SMTP salvo em **Configurações → E-mail**, sim: o hub envia o link e ainda o mostra para copiar. Sem SMTP, quem administra copia o link e envia pelo canal da empresa. O mesmo vale para o link de nova senha. O aviso de contrato quebrado, quando o SMTP está salvo, vai para Owner e Admin ativos, para o time do serviço e para os times que dependem dele.
+Com SMTP salvo em **Configurações → Conexões** (bloco **E-mail**), sim: o hub envia o link e ainda o mostra para copiar. Sem SMTP, quem administra copia o link e envia pelo canal da empresa. O mesmo vale para o link de nova senha. O aviso de contrato quebrado, quando o SMTP está salvo, vai para os Proprietários e Administradores ativos, para o time do serviço e para os times que dependem dele.
 
 ## Onde publico a spec?
 
@@ -58,7 +58,15 @@ O aplicativo sobe, mas o limite de publicações e de tentativas de login é em 
 
 ## Perdi o acesso de todos os administradores. E agora?
 
-No servidor, `pnpm admin:recover --login usuario-ou-email`. O comando pede confirmação. Quem já entrou vira OWNER na hora. Veja [Recuperação de OWNER](/admin/recuperacao-de-owner).
+No servidor, `pnpm admin:recover --login usuario-ou-email`. O comando pede confirmação. Quem já entrou vira Proprietário na hora. Veja [Recuperação de OWNER](/admin/recuperacao-de-owner).
+
+## Como troco entre o tema claro e o escuro?
+
+Clique no seu nome, no pé da barra lateral, e escolha **Claro**, **Escuro** ou **Sistema** em **Aparência**. A escolha é só sua e vale em qualquer aparelho. Quem administra define apenas o nome do sistema e a cor de destaque, em **Configurações → Aparência**.
+
+## Como acho um serviço ou uma tela rápido?
+
+Aperte **Ctrl+K** (**⌘K** no Mac) ou clique em **Buscar**, na barra lateral. A busca leva às telas do menu, acha serviços por nome, endereço (slug), descrição ou endpoint (por exemplo, `GET /pedidos`) e abre os cadastros que você pode criar. O botão **+ Novo** tem os mesmos atalhos de criação.
 
 ## Troquei a `ENCRYPTION_KEY` e os segredos sumiram. Dá para recuperar?
 

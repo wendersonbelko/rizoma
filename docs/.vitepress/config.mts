@@ -50,7 +50,7 @@ const guia: DefaultTheme.SidebarItem[] = [
     text: "Administração",
     items: [
       { text: "Visão geral", link: "/admin/" },
-      { text: "Serviços e repositórios", link: "/admin/servicos-e-vinculos" },
+      { text: "Serviços, repositórios, vínculos e tokens", link: "/admin/servicos-e-vinculos" },
       { text: "Editar e arquivar serviços", link: "/admin/editar-servico" },
       { text: "Times", link: "/admin/times" },
       { text: "Pessoas e acesso", link: "/admin/pessoas-e-acesso" },

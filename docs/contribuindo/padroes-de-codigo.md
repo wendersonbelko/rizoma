@@ -17,7 +17,7 @@ flowchart TD
   db -.-> core
 ```
 
-- **`packages/core`** guarda as regras de negócio puras: permissões (`rbac.ts`), política de acesso, leitura de specs, ambientes, paginação, textos, temas, esquemas Zod e o menu (`hub-nav.ts`). Não importa Prisma, Next.js nem React, e por isso é rápido de testar. Como não depende do banco, `types.ts` espelha à mão os enums do Prisma.
+- **`packages/core`** guarda as regras de negócio puras: permissões (`rbac.ts`), política de acesso, leitura de specs, ambientes, paginação, textos, temas, esquemas Zod, o menu (`hub-nav.ts`) e a busca e os atalhos de criação (`command-search.ts`, `create-shortcuts.ts`). Não importa Prisma, Next.js nem React, e por isso é rápido de testar. Como não depende do banco, `types.ts` espelha à mão os enums do Prisma.
 - **`packages/db`** guarda o `schema.prisma`, as migrações, o client e os scripts administrativos (`recover-owner.ts`, `seed-demo.ts`). Só os scripts usam o `core`.
 - **`apps/web`** é o Next.js: telas, Server Actions, rotas de API, o assistente `/setup` e o backoffice `/admin/*`. É a única camada que junta banco, sessão e interface.
 
@@ -99,11 +99,11 @@ O passo a passo completo está em [Criar uma tela nova](/contribuindo/guias/nova
 | Esquemas Zod | `nameSchema` | `slugSchema`, `envVarSchema` |
 | Permissões | `resource:action` | `catalog:read`, `envvars:reveal` |
 | Ações de auditoria | `group.action_in_snake_case` | `team.member_added`, `envvar.revealed` |
-| Parâmetros de URL de abas | curtos, em inglês | `?t=services`, `?s=organization`, `?tab=rules` |
+| Parâmetros de URL de abas | curtos, em inglês | `?s=organization`, `?tab=rules`, `?depth=all` |
 
 - Use **exports nomeados**. `export default` fica só para `page.tsx`, `layout.tsx` e `route.ts`, onde o Next exige.
 - Identificadores no código ficam em inglês: arquivos, pastas, variáveis, rotas e parâmetros de URL. Textos da interface, mensagens de erro e comentários ficam em pt-BR.
-- As rotas do hub são em inglês, inclusive as que a pessoa recebe por fora do app (`/invite/<token>`, `/reset-password/<token>`, `/signup`, `/login/forgot`). Endereços antigos em português redirecionam para esses.
+- As rotas do hub são em inglês, inclusive as que a pessoa recebe por fora do app (`/invite/<token>`, `/reset-password/<token>`, `/signup`, `/login/forgot`). Endereços antigos em português redirecionam para esses, e uma rota ou um valor de `?s=` renomeado também mantém o antigo com redirecionamento (`/admin/catalog?t=…` vai para a página nova, `/admin/appearance` vai para a aba **Aparência** de Configurações).
 
 ## Server Components e Client Components
 
@@ -211,7 +211,7 @@ Toda a interface é em pt-BR, num tom direto e sem jargão. Fale com a pessoa ("
 | "Submit" / "OK" | "Salvar", "Criar time", "Restaurar" (verbos que dizem o efeito) |
 | "0 serviços listados" | Um `EmptyState`: "Nenhum serviço cadastrado", com a ação para sair do vazio |
 
-Mais regras: só a primeira letra da frase em maiúscula nos botões e títulos, plural correto com `plural()` e `countLabel()` (`packages/core/src/text.ts`), datas com `toLocaleDateString("pt-BR")` e números com `toLocaleString("pt-BR")`. Nomes de telas e botões que aparecem na documentação devem bater com a interface: se você renomear um, atualize o [tour](/contribuindo/guias/nova-tela) e as páginas do site.
+Mais regras: só a primeira letra da frase em maiúscula nos botões e títulos, plural correto com `plural()` e `countLabel()` (`packages/core/src/text.ts`), datas com `toLocaleDateString("pt-BR")` e números com `toLocaleString("pt-BR")`. Nomes de telas e botões que aparecem na documentação devem bater com a interface: se você renomear um, atualize o tour da tela e as páginas do site, como descreve [Criar uma tela nova](/contribuindo/guias/nova-tela). O item do menu tem sempre o mesmo nome do título da página.
 
 ## Comentários
 
@@ -242,6 +242,12 @@ As telas usam os componentes padrão do hub. Não é uma sugestão: os testes em
 | `Section` / `Panel` | `components/ui.tsx` | `Section` para conteúdo que já é um card (tabela); `Panel` para formulários |
 | `TabNav` | `components/tab-nav.tsx` | Abas de página navegando por URL |
 | `FilterChips` | `components/filter-chips.tsx` | Filtros rápidos em pílulas |
+| `FormModal`, `ModalActions` | `components/form-modal.tsx` | O modal-padrão de criar e editar, com **Cancelar** à esquerda e a ação principal à direita |
+| `DirtyForm` | `components/save-bar.tsx` | Formulário de edição que só mostra **Descartar** e **Salvar** quando há mudança |
+| `DangerZone`, `DangerAction` | `components/danger-zone.tsx` | Ação destrutiva, num estilo só, no fim da página |
+| `UndoButton` | `components/undo-button.tsx` | Remover uma linha que dá para recriar, com **Desfazer** |
+| `Breadcrumb` | `components/breadcrumb.tsx` | Trilha das páginas de detalhe ("Catálogo › serviço › Editar") |
+| `NameSlugFields` | `components/name-slug-fields.tsx` | Nome e endereço (slug) gerado, em texto pequeno abaixo do nome |
 | `Button`, `LinkButton`, `Field`, `Input`, `Select` | `components/ui.tsx` | Botões e campos de formulário |
 | `Markdown` | `components/markdown.tsx` | Todo Markdown renderizado (sem HTML cru) |
 
@@ -255,7 +261,7 @@ export function ServiceTable({ services, envs, pagination }: { services: Catalog
         <Th>Serviço</Th>
         <Th>Time</Th>
         <Th>Ambientes</Th>
-        <Th hideBelow="md">Ligações</Th>
+        <Th hideBelow="md">Vínculos</Th>
       </THead>
       <TBody>
         {services.map((s) => <ServiceRow key={s.id} service={s} envs={envs} />)}
@@ -280,8 +286,9 @@ Regras do design system:
 
 - **Lista vazia não vira tabela com uma linha "nenhum item"**: use `EmptyState`.
 - **Listagem que cresce com o uso é paginada** (10 por página; o seletor ainda oferece 20, 50 e 100). Só tabelas de tamanho fixo (a matriz de permissões, as formas de login, as origens de código, os ambientes da instalação) ficam sem paginação, e cada exceção é registrada com o motivo em `FIXED_SIZE_TABLES` no teste.
-- **Criar ou editar uma entidade abre `FormModal`.** O formulário não fica montado na lista. Segredo e convite não fecham sozinhos depois de salvar, para o valor poder ser copiado.
-- **Cores e raios vêm dos tokens do tema**, nunca de valores fixos. As classes são `bg-paper`, `bg-sheet`, `bg-field`, `text-ink`, `text-muted`, `border-line`, `text-accent`, `text-wait`, `text-danger`, `rounded-panel` e `rounded-control`. O tema é editável em **Aparência**, e um hexadecimal fixo quebra o modo escuro e o de alto contraste.
+- **Criar ou editar uma entidade abre `FormModal`.** O formulário não fica montado na lista. O rodapé é `ModalActions`: **Cancelar** à esquerda e a ação principal à direita, em verbo e objeto ("Criar serviço"). Segredo e convite não fecham sozinhos depois de salvar, para o valor poder ser copiado. O modal abre também pelo endereço, com o `id` dele (`#new-service`), que é o contrato com o **+ Novo** e a busca **⌘K**.
+- **Edição de uma página inteira usa `DirtyForm`** (a barra "Alterações não salvas" só com mudança), e **toda ação destrutiva usa `DangerZone` e `DangerAction`**. Não monte um botão vermelho avulso nem um segundo **Salvar** na mesma página.
+- **Cores e raios vêm dos tokens do tema**, nunca de valores fixos. As classes são `bg-paper`, `bg-sheet`, `bg-raised`, `bg-field`, `text-ink`, `text-muted`, `border-line`, `border-line-strong`, `text-accent`, `text-wait`, `text-danger`, `rounded-panel` e `rounded-control`. Cada pessoa escolhe o tema Claro ou Escuro, e o administrador só define a cor de destaque, em **Configurações → Aparência**. Um hexadecimal fixo quebra o tema escuro.
 - **Precisa de um padrão que não existe?** Crie um componente em `components/`, documente-o com um bloco `/** */` e use-o nas telas. Não copie marcação de uma tela para outra.
 
 ## Acessibilidade
@@ -292,7 +299,7 @@ Regras do design system:
 - Todo campo tem rótulo: use `Field`. Botão só com ícone precisa de `aria-label`.
 - Não use só a cor para dizer algo: um `Badge` sempre tem texto.
 - O foco visível é global (`:focus-visible`); não o desligue. Animações respeitam `prefers-reduced-motion`.
-- O contraste dos temas é validado em `packages/core` (WCAG AA). Ao mudar uma cor do tema, o teste `themes.test.ts` vai avisar.
+- O contraste dos temas é validado em `packages/core` (WCAG AA, com 3:1 para a borda de campo, `line-strong`). Ao mudar uma cor do tema, o teste `themes.test.ts` vai avisar. Não mude a paleta só para fazer o teste passar.
 - O mapa tem o modo **Lista**, uma tabela navegável por teclado, justamente para quem não usa o grafo.
 
 ## Segurança

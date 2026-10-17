@@ -22,7 +22,7 @@ hero:
 features:
   - icon: 📚
     title: Um catálogo para todas as APIs
-    details: Swagger 2.0, OpenAPI 3.0 e 3.1 renderizados num só lugar, com busca, tags, histórico de versões e o time responsável por cada serviço.
+    details: Swagger 2.0, OpenAPI 3.0 e 3.1 renderizados num só lugar, com busca (também por Ctrl+K), filtros por time, tipo e situação, tags, histórico de versões e o time responsável por cada serviço.
     link: /uso/catalogo
     linkText: Ver o catálogo
   - icon: 🔒
@@ -42,7 +42,7 @@ features:
     linkText: Publicar pelo CI
   - icon: 🕸️
     title: Mapa de ligações
-    details: Serviços, integrações externas, repositórios e times num grafo interativo — e em tabela navegável por teclado. Descubra o impacto de uma mudança antes de fazê-la.
+    details: Serviços, integrações externas, repositórios e times num grafo interativo que abre em foco no serviço mais conectado — e em tabela navegável por teclado. Descubra o impacto de uma mudança antes de fazê-la.
     link: /uso/mapa
     linkText: Explorar o mapa
   - icon: 🔑
@@ -52,7 +52,7 @@ features:
     linkText: Variáveis de ambiente
   - icon: 🛡️
     title: Papéis, permissões e auditoria
-    details: OWNER, ADMIN, MAINTAINER e VIEWER com matriz de permissões editável. Toda ação administrativa fica registrada e pode ser exportada em CSV.
+    details: Proprietário, Administrador, Mantenedor e Leitor, com matriz de permissões editável. Toda ação administrativa fica registrada e pode ser exportada em CSV.
     link: /referencia/permissoes
     linkText: Papéis e permissões
   - icon: 🧭
@@ -74,6 +74,8 @@ features:
 Muitos times expõem o Swagger de cada serviço em `/docs`. Isso tem dois custos: alguém precisa apresentar serviço por serviço a cada pessoa nova, e contratos internos ficam públicos na internet. O Rizoma junta tudo num único lugar fechado, onde quem é da empresa encontra todas as APIs, entende quem é dono de cada uma e como elas se ligam. [Entenda a proposta →](/guia/o-que-e)
 
 ![Catálogo do Rizoma](/prints/04-catalogo.png)
+
+*O catálogo, numa versão anterior da interface. Hoje a lista é mais compacta e tem busca e filtros por time, tipo e situação.*
 
 ## Rodando em 3 comandos
 

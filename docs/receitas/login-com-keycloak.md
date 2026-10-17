@@ -8,7 +8,7 @@ Se a sua empresa já tem um provedor de identidade, as pessoas podem entrar no h
 
 ## Antes de começar
 
-- Você tem acesso administrativo a um **realm** do Keycloak e enxerga **Configurações** no hub (`settings:manage`, por padrão só o OWNER).
+- Você tem acesso administrativo a um **realm** do Keycloak e enxerga **Configurações** no hub (`settings:manage`, por padrão só o Proprietário).
 - O `AUTH_URL` do hub é o endereço público (`https://apihub.suaempresa.com`). A URL de retorno do login é montada com ele. Veja [Variáveis de ambiente](/instalacao/variaveis-de-ambiente).
 - O **servidor do hub** (e não o seu navegador) consegue abrir a URL do Keycloak. Ao salvar, o hub consulta o emissor na hora.
 - O Keycloak usa HTTPS. O hub só aceita emissor `https://` (ou `http://localhost`, para testes).
@@ -25,7 +25,7 @@ Se a sua empresa já tem um provedor de identidade, as pessoas podem entrar no h
 | URL de retorno (redirect URI) | `https://apihub.suaempresa.com/api/auth/callback/oidc` |
 | Emissor (issuer) | `https://keycloak.suaempresa.com/realms/<realm>` |
 
-A URL de retorno é sempre `<AUTH_URL>/api/auth/callback/oidc`. O hub também a mostra, pronta para copiar, no cartão do OIDC em **Configurações → Formas de login**.
+A URL de retorno é sempre `<AUTH_URL>/api/auth/callback/oidc`. O hub também a mostra, pronta para copiar, no modal do OIDC, em **Configurações → Conexões → Formas de login**.
 
 ### 2. Crie o client no Keycloak
 
@@ -51,8 +51,8 @@ A resposta é um JSON. Copie o valor do campo `issuer` **exatamente como veio**.
 
 ### 5. Cadastre o OIDC no hub
 
-1. Abra **Configurações** e a seção **Formas de login**.
-2. Em **OIDC (Keycloak, Okta, Auth0…)**, clique em **Ligar**.
+1. Abra **Configurações → Conexões** (`?s=connections`) e a seção **Formas de login**.
+2. Na linha **OIDC (Keycloak, Okta, Auth0…)**, clique em **Ligar**.
 3. Preencha:
 
 | Campo | O que colocar |
@@ -62,7 +62,7 @@ A resposta é um JSON. Copie o valor do campo `issuer` **exatamente como veio**.
 | **Client ID** | `api-hub` |
 | **Client secret** | O secret do passo 3. Fica cifrado no banco. |
 
-4. Clique em **Salvar**.
+4. Clique em **Ligar forma de login**.
 
 O hub consulta `<emissor>/.well-known/openid-configuration` (com limite de 8 segundos) antes de salvar. Se responder, a tela confirma "Formas de login salvas. Valem a partir do próximo login."
 
@@ -70,9 +70,9 @@ O hub pede os escopos `openid email profile`.
 
 ### 6. Diga quais domínios comprovam vínculo
 
-Abra a aba **Organização**, preencha **Domínios de e-mail da empresa** (por exemplo, `suaempresa.com`) e clique em **Salvar organização**. Subdomínios contam. No OIDC, o vínculo exige as duas coisas: e-mail **verificado** e domínio da lista (RN-02).
+Abra a aba **Organização e acesso** (`?s=organization`) e, no painel **Organização**, digite o domínio em **Domínios de e-mail da empresa** (por exemplo, `suaempresa.com`), clique em **+** e depois em **Salvar organização**. Subdomínios contam. No OIDC, o vínculo exige as duas coisas: e-mail **verificado** e domínio da lista (RN-02).
 
-Sem domínio cadastrado, o login funciona, mas ninguém comprova vínculo: todo mundo cai em "pedir acesso". Um aviso no alto da aba lembra: "OIDC sem domínio de e-mail aceito: todos pedem acesso."
+Sem domínio cadastrado, o login funciona, mas ninguém comprova vínculo: todo mundo cai em "pedir acesso". Um aviso no alto da aba lembra: "OIDC (Keycloak, Okta, Auth0…) sem domínio de e-mail aceito: todos pedem acesso."
 
 ### 7. Garanta o e-mail verificado no Keycloak
 
@@ -83,7 +83,7 @@ O hub lê os campos `email` e `email_verified` do token. No Keycloak:
 
 ### 8. Ligue a liberação automática
 
-Em **Configurações → Regras de acesso**, marque **Liberar automaticamente quem comprova vínculo com a empresa**. Quem tem e-mail verificado do domínio entra direto, como VIEWER. Veja [Acesso automático para a empresa](/receitas/acesso-automatico-pela-organizacao).
+Em **Configurações → Organização e acesso**, no painel **Regras de acesso**, marque **Liberar automaticamente quem comprova vínculo com a empresa**. Quem tem e-mail verificado do domínio entra direto, como Leitor. Veja [Acesso automático para a empresa](/receitas/acesso-automatico-pela-organizacao).
 
 ### 9. Teste
 
@@ -110,8 +110,8 @@ Nos dois, copie o `issuer` do documento `.well-known/openid-configuration` para 
 ## Como saber que deu certo
 
 - **Entrar com Keycloak** (ou o nome que você escolheu) aparece na tela de login.
-- Uma pessoa com e-mail verificado do domínio entra direto e aparece em **Pessoas e acesso**, na tabela **Pessoas**, como **ativo**, origem **da empresa**, papel **VIEWER**.
-- Em **Auditoria**, o tipo **Configurações** registra "Formas de login atualizadas", e o tipo **Login e saída** registra o primeiro login.
+- Uma pessoa com e-mail verificado do domínio entra direto e aparece em **Pessoas e acesso**, na tabela **Pessoas**, como **ativo**, origem **da empresa**, papel **Leitor**.
+- Em **Auditoria**, o tipo de evento **Configurações** registra "atualizou as formas de login", e o tipo **Login e saída** registra o primeiro login ("entrou no sistema").
 
 ## Problemas comuns
 

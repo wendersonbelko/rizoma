@@ -10,7 +10,7 @@ O hub não exige um CI específico: publicar é um `POST` com o arquivo da spec.
 
 - O serviço já está cadastrado no hub. Se não estiver, veja [Do zero ao primeiro serviço](/receitas/primeiro-servico).
 - Você tem `token:manage` e é do time responsável pelo serviço (ou tem `service:edit_any`).
-- Os ambientes e as regras de branch estão configurados em **Configurações → Ambientes**. Veja [Ambientes por branch](/receitas/ambientes-por-branch).
+- Os ambientes e as regras de branch estão configurados em **Configurações → Ambientes e sessões**. Veja [Ambientes por branch](/receitas/ambientes-por-branch).
 - O agente do CI alcança o hub pela rede e tem `curl` 7.76 ou mais novo (por causa do `--fail-with-body`). Com um `curl` mais antigo, use o script do passo 3.
 - A spec existe como arquivo ou é gerada antes do passo de publicação. Os comandos por framework estão em [Publicar pelo GitHub Actions](/receitas/publicar-pelo-github-actions).
 
@@ -18,9 +18,9 @@ O hub não exige um CI específico: publicar é um `POST` com o arquivo da spec.
 
 ### 1. Gere o token e guarde-o como segredo
 
-1. No hub, abra **Serviços e repositórios → Tokens**.
-2. Clique em **Novo token**, escolha o **Serviço**, dê um **Nome** (por exemplo, `jenkins`) e a **Validade (dias)**.
-3. Clique em **Gerar token** e copie o valor (`ahub_...`). Ele só aparece uma vez.
+1. No hub, abra **Tokens de CI** (grupo **Cadastros** do menu).
+2. Clique em **Novo token**, escolha o **Serviço** (o campo começa vazio) e dê um **Nome do token** (por exemplo, `jenkins`). A **Validade (dias)** fica em **Detalhes opcionais**; o padrão é 90.
+3. Clique em **Gerar token**, depois em **Copiar token**. O valor (`ahub_...`) só aparece uma vez, nesse modal.
 4. Guarde o token como segredo do seu CI, com o nome `API_HUB_TOKEN`, e a URL do hub como variável comum, `API_HUB_URL` (`https://apihub.suaempresa.com`).
 
 Um token vale para um serviço só: um repositório com vários serviços precisa de um token por serviço.
@@ -316,8 +316,8 @@ Um arquivo de spec cru enviado com `Content-Type: application/json` é rejeitado
 ## Como saber que deu certo
 
 - O passo termina verde e a resposta impressa tem `"status": "published"` (HTTP 201) ou `"status": "unchanged"` (HTTP 200, spec idêntica à existente).
-- No hub, o **Catálogo** mostra o selo do ambiente com a versão nova, e a aba **Documentação da API** do serviço mostra a versão com o marcador de atual.
-- Em **Serviços e repositórios → Tokens**, o **Último uso** do token foi atualizado.
+- No hub, o **Catálogo** mostra a pílula do ambiente, na coluna **Ambientes**, com a versão nova, e a aba **Documentação da API** do serviço mostra a versão com o marcador de atual.
+- Em **Tokens de CI**, o **Último uso** do token foi atualizado.
 
 Todos os status possíveis (201, 200, 401, 413, 422, 429) estão em [Publicar pelo GitHub Actions](/receitas/publicar-pelo-github-actions#como-saber-que-deu-certo).
 
@@ -327,7 +327,7 @@ Todos os status possíveis (201, 200, 401, 413, 422, 429) estão em [Publicar pe
 |---|---|
 | `curl: option --fail-with-body: is unknown` | O `curl` do agente é anterior à versão 7.76. Atualize-o ou use o script do passo 3. |
 | 401 `Token ausente.` | A variável do token está vazia no passo. No Azure DevOps, falta o bloco `env`; no Jenkins, confira o ID da credencial. |
-| 422 dizendo que a branch não corresponde a nenhum ambiente | Ajuste as regras em **Configurações → Ambientes**, ou envie `environment`. Em builds de tag ou de pull request, a branch não serve. |
+| 422 dizendo que a branch não corresponde a nenhum ambiente | Ajuste as regras em **Configurações → Ambientes e sessões**, ou envie `environment`. Em builds de tag ou de pull request, a branch não serve. |
 | 422 `Corpo inválido` | Arquivo cru com `Content-Type: application/json`, ou envelope JSON sem `spec`, ou `commitSha` que não é hexadecimal de 7 a 40 caracteres. |
 | Branch `release/1.4` chega como `1.4` | No Azure DevOps, use `BUILD_SOURCEBRANCH`, não `Build.SourceBranchName`. |
 | Timeout ou conexão recusada | O agente não alcança o hub. Use um agente na rede interna. |

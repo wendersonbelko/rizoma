@@ -19,7 +19,7 @@ O objetivo é ter **um único lugar, fechado**, onde quem é da empresa encontra
 
 - Instalar do zero **só pela tela**, sem editar o banco.
 - Uma pessoa nova da organização entrar e ver o catálogo **sem pedir nada a ninguém**.
-- Uma pessoa de fora **pedir acesso** e ser aprovada ou recusada por quem administra.
+- Uma pessoa de fora **solicitar acesso** e ser aprovada ou recusada por quem administra.
 - Um serviço **publicar a spec pelo CI** e aparecer no catálogo, por ambiente.
 - O `/docs` público dos serviços poder ser **desligado sem perder a documentação**.
 
@@ -62,7 +62,7 @@ As ações que importam (login, decisões de acesso, papéis, permissões, times
 
 ### Interface única e padronizada
 
-Todas as listagens usam o mesmo componente de tabela, a mesma paginação (por URL), os mesmos estados vazios, selos, avisos e abas. Testes-guarda falham se alguém montar uma tabela à mão ou esquecer a paginação. Todo o texto é em português do Brasil. Veja [Interface e design system](/arquitetura/interface).
+Todas as listagens usam o mesmo componente de tabela, a mesma paginação (por URL), os mesmos estados vazios, selos, avisos e abas. Todo formulário de criar ou editar abre o mesmo modal, com **Cancelar** à esquerda e a ação principal à direita, e toda ação destrutiva tem um estilo só. O item do menu tem o mesmo nome do título da página que ele abre, e cada pessoa escolhe o próprio tema, Claro ou Escuro. Testes-guarda falham se alguém montar uma tabela à mão ou esquecer a paginação. Todo o texto é em português do Brasil. Veja [Interface e design system](/arquitetura/interface).
 
 ### Auto-hospedado, sem dependência de SaaS
 
@@ -105,7 +105,7 @@ flowchart LR
 | **Pipeline de CI** | Publica a spec de cada serviço com um token, por `POST /api/v1/specs`. |
 | **Proxy HTTPS** | Termina o TLS na frente do app. Veja [HTTPS com proxy reverso](/instalacao/proxy-https). |
 | **App Next.js** (`apps/web`) | Um único aplicativo com as telas, as Server Actions, as rotas de API (`/api/v1/*`, `/api/auth/*`, `/api/health`, `/api/setup*`, o CSV da auditoria e o download do `.env`) e o assistente de instalação. |
-| **`packages/core`** | As regras de negócio puras: `rbac`, `access-policy`, `spec`, `environments`, `sources`, `envvars`, `crypto`, `password`, `graph`, `themes`, schemas Zod, `hub-nav` e `pagination`. |
+| **`packages/core`** | As regras de negócio puras: `rbac`, `access-policy`, `spec`, `environments`, `sources`, `envvars`, `crypto`, `password`, `graph`, `themes`, schemas Zod, `hub-nav` (o menu), `command-search` e `create-shortcuts` (a busca ⌘K e o **+ Novo**) e `pagination`. |
 | **`packages/db`** | O schema do Prisma, as migrações, o cliente (com o driver `pg`) e os scripts de recuperação de OWNER e de demonstração. |
 | **PostgreSQL** | Guarda tudo: configuração, pessoas, serviços, specs por versão, variáveis, auditoria. |
 | **Provedores de login** | GitHub, Google, Microsoft, GitLab, Facebook ou OIDC, para autenticar e comprovar vínculo. Veja [Provedores de login](/instalacao/provedores-de-login). |
