@@ -150,7 +150,7 @@ export async function POST(req: Request) {
       if (d.mode === "password") {
         const cred = await prisma.authProvider.findUnique({ where: { type: "CREDENTIALS" } });
         if (!cred) return json(400, { error: "Ative o login por e-mail e senha para criar o administrador assim." });
-        if (owner && owner.email !== d.email) return json(409, { error: "O OWNER já foi definido." });
+        if (owner && owner.email !== d.email) return json(409, { error: "O Proprietário já foi definido." });
         const problems = passwordProblems(d.password, d.email);
         if (problems.length) return json(422, { error: problems.join(" ") });
         const data = { name: d.name, passwordHash: await hashPassword(d.password), role: "OWNER" as const, status: "ACTIVE" as const, accessGrant: "OWNER_SETUP" as const };
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
         break;
       }
       const owned = owner && [owner.githubLogin, owner.email].some((v) => v?.toLowerCase() === d.ownerIdentifier);
-      if (owner && !owned) return json(409, { error: "O OWNER já foi definido." });
+      if (owner && !owned) return json(409, { error: "O Proprietário já foi definido." });
       await prisma.installation.update({ where: { id: "singleton" }, data: { ownerIdentifier: d.ownerIdentifier } });
       // Só avança depois que a pessoa entrar pelo provedor (ver GET owner.claimedBy).
       if (!owner) return json(200, { ok: true, needsSignIn: true });

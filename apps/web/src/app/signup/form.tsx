@@ -10,7 +10,7 @@ export function SignupForm() {
   if (state.ok)
     return (
       <p className="text-muted">
-        Pedido registrado. Quando um administrador aprovar, você entra com seu e-mail e senha. <Link href="/login" className="text-accent">Voltar ao login</Link>
+        Solicitação registrada. Quando um administrador aprovar, você entra com seu e-mail e senha. <Link href="/login" className="text-accent">Voltar ao login</Link>
       </p>
     );
   return (

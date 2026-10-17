@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@api-hub/db";
-import { SPEC_SOURCE_LABEL, canManageService, outlineOperations, parseSpec } from "@api-hub/core";
+import { SPEC_SOURCE_LABEL, can, canManageService, outlineOperations, parseSpec } from "@api-hub/core";
 import type { CurrentUser } from "@/lib/guards";
 import { docUrl } from "@/lib/links";
 import { LinkButton, Notice } from "@/components/ui";
 import { EmptyState } from "@/components/empty-state";
+import { SpecOriginNotice } from "../spec-origin-notice";
 import { ApiReference } from "../api-reference";
 import { ApiBrowser } from "../api-browser";
 import type { HrefFor, ServiceDetail } from "../types";
@@ -16,8 +17,8 @@ type Env = { id: string; slug: string; name: string; isProduction: boolean; sync
  * publicar quando ainda não há nenhuma. Consulta as próprias versões — nenhuma outra aba
  * depende desses dados.
  */
-export async function ApiTab({ user, service, env, selectedVersionId, dark, slug, hrefFor }: {
-  user: CurrentUser; service: ServiceDetail; env: Env; selectedVersionId?: string; dark: boolean; slug: string; hrefFor: HrefFor;
+export async function ApiTab({ user, service, env, selectedVersionId, dark, hrefFor }: {
+  user: CurrentUser; service: ServiceDetail; env: Env; selectedVersionId?: string; dark: boolean; hrefFor: HrefFor;
 }) {
   const versions = await prisma.apiSpec.findMany({
     where: { serviceId: service.id, environmentId: env.id },
@@ -60,7 +61,7 @@ export async function ApiTab({ user, service, env, selectedVersionId, dark, slug
     <div className="space-y-4">
       {service.kind !== "API" && (
         <Notice title={service.kind === "FRONTEND" ? "Frontend" : "Worker"}>
-          Este sistema não precisa de spec OpenAPI. As ligações abaixo dizem com quem ele fala.
+          Este sistema não precisa de spec OpenAPI. Os vínculos abaixo dizem com quem ele fala.
         </Notice>
       )}
       {(outgoing.length > 0 || called.length > 0 || deprecated.length > 0) && (
@@ -81,10 +82,7 @@ export async function ApiTab({ user, service, env, selectedVersionId, dark, slug
         </div>
       )}
       {sourceMismatch && (
-        <Notice tone="wait">
-          A versão atual em {env.name} veio de {SPEC_SOURCE_LABEL[latest.source]}, mas a origem configurada é {SPEC_SOURCE_LABEL[service.specSource]}.{" "}
-          {canPublish && <Link href={`/services/${slug}/edit`} className="underline">Revisar em Editar serviço</Link>}
-        </Notice>
+        <SpecOriginNotice envName={env.name} actualSource={latest.source} configuredSource={service.specSource} href={hrefFor({ tab: "config" })} />
       )}
       {spec && outline.length > 0 ? (
         <ApiBrowser outline={outline} spec={normalized} dark={dark} versions={versionLinks} selectedVersionId={selected?.id} envName={env.name} />
@@ -106,7 +104,8 @@ export async function ApiTab({ user, service, env, selectedVersionId, dark, slug
             service.specSource === "CI_PUSH" ? (
               <div className="flex flex-wrap justify-center gap-3">
                 <LinkButton href={docUrl("receitas/publicar-pelo-github-actions")} tone="quiet" external>Como configurar o CI</LinkButton>
-                {canPublish && <LinkButton href="/admin/catalog?t=tokens#tokens">Gerar token de publicação</LinkButton>}
+                {/* Contrato com a tela de Tokens de CI: abre o modal "Gerar token" com este serviço já escolhido. */}
+                {canPublish && can(user, "token:manage") && <LinkButton href={`/admin/tokens?service=${service.id}#new-token`}>Gerar token de CI</LinkButton>}
               </div>
             ) : undefined
           }

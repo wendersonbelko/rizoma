@@ -1,49 +1,47 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { THEME_TOKENS, paletteProblems, resolveTheme, type Palette } from "@api-hub/core/themes";
-import { Button } from "@/components/ui";
-import { saveAppearance, type AppearanceResult } from "./actions";
+import { useMemo, useState } from "react";
+import { accentProblems } from "@api-hub/core/themes";
+import { SettingsForm } from "@/app/(hub)/admin/settings/form-primitives";
+import { saveAppearance } from "./actions";
 import { TitleSection } from "./title-section";
-import { ThemePicker } from "./theme-picker";
-import { PaletteEditor } from "./palette-editor";
+import { AccentSection } from "./accent-section";
 import { AppearancePreview } from "./appearance-preview";
 
 /**
- * Tela de Aparência: só guarda o estado (nome, tema, paleta) e junta as quatro seções, cada
- * uma num arquivo à parte (título, tema, paleta, prévia) — nenhuma delas sabe salvar nada.
+ * Marca da instalação: nome do sistema e cor de destaque, com a prévia nos dois temas ao lado
+ * (achado F5 da auditoria de UX de 02/10/2026; o tema Claro/Escuro é de cada pessoa, no menu do
+ * avatar). É a aba "Aparência" de Configurações e, como as outras, só mostra o botão de salvar quando
+ * há mudança (achado F1): o <SettingsForm> compara o formulário com o estado salvo.
  */
-export function AppearanceEditor({ appName: initialName, themeId: initialTheme, palette: initialPalette }: { appName: string; themeId: string; palette: Palette }) {
-  const [appName, setAppName] = useState(initialName);
-  const [themeId, setThemeId] = useState(initialTheme);
-  const [palette, setPalette] = useState<Palette>(initialPalette);
-  const [result, setResult] = useState<AppearanceResult | null>(null);
-  const [pending, start] = useTransition();
-  const problems = useMemo(() => paletteProblems(palette), [palette]);
-  const custom = THEME_TOKENS.some((t) => palette[t] !== resolveTheme(themeId).palette[t]);
-
-  const pickTheme = (id: string) => { setThemeId(id); setPalette(resolveTheme(id).palette); setResult(null); };
-
+export function AppearanceEditor({ appName, accent }: { appName: string; accent: string }) {
+  const save = async (form: FormData) => {
+    const result = await saveAppearance({ appName: String(form.get("appName") ?? ""), accent: String(form.get("accent") ?? "") });
+    // Cor ilegível: a mensagem e o motivo viram uma frase só, que cabe na barra de salvar.
+    return result.problems?.length ? { ok: false, message: [result.message, ...result.problems].filter(Boolean).join(" ") } : result;
+  };
   return (
-    <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <SettingsForm action={save} saveLabel="Salvar marca">
+      <AppearanceFields initialName={appName} initialAccent={accent} />
+    </SettingsForm>
+  );
+}
+
+/**
+ * O estado dos campos mora aqui, dentro do formulário, para o "Descartar" da barra voltar ao que está salvo.
+ * Nenhuma seção sabe salvar: só escrevem `appName` e `accent` no formulário.
+ */
+function AppearanceFields({ initialName, initialAccent }: { initialName: string; initialAccent: string }) {
+  const [appName, setAppName] = useState(initialName);
+  const [accent, setAccent] = useState(initialAccent);
+  const problems = useMemo(() => accentProblems(accent), [accent]);
+  return (
+    <div className="grid gap-8 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
       <div className="space-y-8">
         <TitleSection appName={appName} onChange={setAppName} />
-        <ThemePicker themeId={themeId} onPick={pickTheme} />
-        <PaletteEditor
-          palette={palette} problems={problems} showRestore={custom}
-          onChange={setPalette} onRestore={() => setPalette(resolveTheme(themeId).palette)}
-        />
-
-        <div data-tour="appearance-save" className="flex flex-wrap items-center gap-4">
-          <Button disabled={pending || problems.length > 0 || appName.trim().length < 2} onClick={() => start(async () => setResult(await saveAppearance({ appName, themeId, palette })))}>
-            {pending ? "Salvando…" : "Salvar aparência"}
-          </Button>
-          {result?.message && <p role="status" className={`text-sm ${result.ok ? "text-accent" : "text-danger"}`}>{result.message}</p>}
-        </div>
-        {result?.problems && <ul className="text-sm text-danger">{result.problems.map((p) => <li key={p}>{p}</li>)}</ul>}
+        <AccentSection accent={accent} problems={problems} onChange={setAccent} />
       </div>
-
-      <AppearancePreview appName={appName} palette={palette} />
+      <AppearancePreview appName={appName} accent={accent} />
     </div>
   );
 }

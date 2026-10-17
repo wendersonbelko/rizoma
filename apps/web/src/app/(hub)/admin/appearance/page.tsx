@@ -1,17 +1,10 @@
-import { requirePermission } from "@/lib/guards";
-import { getTheme } from "@/lib/install";
-import { AppearanceEditor } from "./editor";
+import { redirect } from "next/navigation";
 
-export default async function AppearancePage() {
-  await requirePermission("appearance:manage");
-  const theme = await getTheme();
-  return (
-    <div className="max-w-6xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold tracking-tight">Aparência</h1>
-        <p className="text-muted">Título do sistema, tema e cores. Vale para todas as pessoas.</p>
-      </header>
-      <AppearanceEditor appName={theme.appName} themeId={theme.id} palette={theme.palette} />
-    </div>
-  );
+/**
+ * A Aparência virou a aba "Aparência" de Configurações (achado N3 da auditoria de UX de 02/10/2026). A URL antiga
+ * continua valendo como atalho: quem a tinha salva cai na aba. A permissão é conferida lá (404 sem `appearance:manage`).
+ * `actions.ts` e `editor.tsx` seguem aqui: a aba monta o mesmo editor e os testes de integração importam `saveAppearance`.
+ */
+export default function AppearancePage() {
+  redirect("/admin/settings?s=appearance");
 }

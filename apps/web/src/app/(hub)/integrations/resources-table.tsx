@@ -26,7 +26,7 @@ export function ResourcesTable({ resources, pagination }: { resources: Resource[
               <Td><CellTitle title={r.name} href={`/integrations/${r.slug}`} meta={r.provider ?? undefined} /></Td>
               <Td><Badge>{RESOURCE_KIND_LABEL[r.kind]}</Badge></Td>
               <Td hideBelow="md" muted>
-                {active.length === 0 ? "Nenhum serviço ligado" : (
+                {active.length === 0 ? "Nenhum serviço vinculado" : (
                   <ul className="space-y-0.5">
                     {active.slice(0, 3).map((s) => (
                       <li key={s.id}>

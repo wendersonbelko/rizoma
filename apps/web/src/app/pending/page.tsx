@@ -19,11 +19,11 @@ export default async function PendingPage() {
   return (
     <main className="grid min-h-dvh place-items-center px-6">
       <div className="max-w-md">
-        <h1 className="mb-3 text-2xl font-bold">Pedido de acesso enviado</h1>
-        <p className="mb-2 text-muted">Sua conta <strong className="text-ink">{who}</strong> ainda não foi liberada. Um administrador vai revisar o pedido.</p>
+        <h1 className="mb-3 text-2xl font-bold">Solicitação de acesso enviada</h1>
+        <p className="mb-2 text-muted">Sua conta <strong className="text-ink">{who}</strong> ainda não foi liberada. Um administrador vai revisar a solicitação.</p>
         {request && (
           <p className="mb-6 text-sm text-muted">
-            Enviado em {request.createdAt.toLocaleDateString("pt-BR")}. Se ninguém decidir até {request.expiresAt.toLocaleDateString("pt-BR")}, o pedido expira e você pode entrar de novo para refazê-lo.
+            Enviado em {request.createdAt.toLocaleDateString("pt-BR")}. Se ninguém decidir até {request.expiresAt.toLocaleDateString("pt-BR")}, a solicitação expira e você pode entrar de novo para refazê-la.
           </p>
         )}
         {request?.status === "PENDING" && request.expiresAt > new Date() && <ReasonForm current={request.reason} />}

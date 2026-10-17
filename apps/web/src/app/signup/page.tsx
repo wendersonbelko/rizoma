@@ -15,7 +15,7 @@ export default async function SignupPage() {
         <HubLogo className="mb-4 size-12" />
         <p className="text-sm text-muted">{inst.appName}</p>
         <h1 className="mb-2 text-2xl font-bold">Pedir acesso</h1>
-        <p className="mb-6 text-muted">Um administrador revisa todo pedido antes de liberar.</p>
+        <p className="mb-6 text-muted">Um administrador revisa toda solicitação antes de liberar.</p>
         <SignupForm />
       </div>
     </main>

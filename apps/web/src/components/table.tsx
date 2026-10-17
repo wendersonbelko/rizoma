@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from "react";
+import { TableScroll } from "@/components/table-scroll";
 
 /**
  * Padrão único de tabela do hub. Toda listagem tabular (catálogo, auditoria, pessoas, times,
@@ -24,7 +25,7 @@ const HIDE_BELOW: Record<Breakpoint, string> = { sm: "hidden sm:table-cell", md:
 type Align = "left" | "right" | "center";
 const ALIGN: Record<Align, string> = { left: "text-left", right: "text-right", center: "text-center" };
 
-export function DataTable({ children, tour, caption, minWidth, stickyHeader, pagination, footer, className = "" }: {
+export function DataTable({ children, tour, caption, minWidth, stickyHeader, innerScroll, pagination, footer, className = "" }: {
   children: ReactNode;
   tour?: string;
   /** Descrição para leitores de tela. */
@@ -32,11 +33,19 @@ export function DataTable({ children, tour, caption, minWidth, stickyHeader, pag
   /** Largura mínima antes de a tabela rolar na horizontal (px). */
   minWidth?: number;
   /**
-   * Cabeçalho fixo durante a rolagem. A rolagem acontece dentro do card (altura máxima de 70% da
-   * tela) — é isso que faz o sticky funcionar: com overflow-x no contêiner, o cabeçalho só gruda
-   * se o próprio contêiner for quem rola na vertical.
+   * Cabeçalho fixo durante a rolagem DA PÁGINA (achado D5 da auditoria de UX de 02/10/2026: sem
+   * barra de rolagem aninhada). O card só corta os cantos (overflow-clip) e não vira contêiner de
+   * rolagem; é isso que deixa o `sticky` da <THead sticky> grudar na página. Para o cabeçalho fixar,
+   * use junto com `<THead sticky>`. Em tela mais estreita que `minWidth` a rolagem horizontal
+   * continua (e aí o cabeçalho deixa de grudar, porque rolar na horizontal cria um contêiner).
    */
   stickyHeader?: boolean;
+  /**
+   * Comportamento antigo do `stickyHeader`: a rolagem acontece DENTRO do card (altura máxima de 70%
+   * da tela). Para quem precisa de uma lista presa a uma área de altura fixa (ex.: a lista do mapa).
+   * Também fixa o cabeçalho, desde que a <THead sticky> esteja presente.
+   */
+  innerScroll?: boolean;
   /** Barra de paginação, logo abaixo das linhas (<Pagination> ou <ClientPagination>). */
   pagination?: ReactNode;
   /** Área abaixo das linhas, dentro do card — ex.: formulário "adicionar mais um". */
@@ -44,15 +53,22 @@ export function DataTable({ children, tour, caption, minWidth, stickyHeader, pag
   className?: string;
 }) {
   const style: CSSProperties | undefined = minWidth ? { minWidth } : undefined;
+  const grid = (
+    <table className="w-full border-collapse text-left text-sm" style={style}>
+      {caption && <caption className="sr-only">{caption}</caption>}
+      {children}
+    </table>
+  );
   return (
     // data-list / data-scroll-area: é por eles que a paginação volta a tabela para o topo.
-    <div data-tour={tour} data-list="" className={`flex scroll-mt-6 flex-col overflow-hidden rounded-panel border border-line bg-sheet shadow-[0_1px_2px_color-mix(in_srgb,var(--color-ink)_4%,transparent)] ${className}`}>
-      <div data-scroll-area="" className={stickyHeader ? "max-h-[70vh] min-h-0 flex-1 overflow-auto" : "overflow-x-auto"}>
-        <table className="w-full border-collapse text-left text-sm" style={style}>
-          {caption && <caption className="sr-only">{caption}</caption>}
-          {children}
-        </table>
-      </div>
+    <div data-tour={tour} data-list="" className={`flex scroll-mt-6 flex-col ${innerScroll ? "overflow-hidden" : "overflow-clip"} rounded-panel border border-line bg-sheet shadow-[0_1px_2px_color-mix(in_srgb,var(--color-shadow,var(--color-ink))_4%,transparent)] ${className}`}>
+      {innerScroll ? (
+        <div data-scroll-area="" className="max-h-[70vh] min-h-0 flex-1 overflow-auto">{grid}</div>
+      ) : stickyHeader ? (
+        <TableScroll>{grid}</TableScroll>
+      ) : (
+        <div data-scroll-area="" className="overflow-x-auto">{grid}</div>
+      )}
       {pagination && <div className="border-t border-line px-4 py-2.5">{pagination}</div>}
       {footer && <div className="border-t border-line bg-paper/50 px-4 py-3">{footer}</div>}
     </div>
@@ -75,7 +91,9 @@ export function Th({ children, align = "left", hideBelow, width, className = "" 
       scope="col"
       style={width ? { width } : undefined}
       // Linha inferior como sombra (não border): com border-collapse, a borda some no cabeçalho fixo.
-      className={`whitespace-nowrap bg-paper/70 px-4 py-2.5 text-xs font-medium text-muted shadow-[inset_0_-1px_0_var(--color-line)] ${ALIGN[align]} ${hideBelow ? HIDE_BELOW[hideBelow] : ""} ${className}`}
+      // Fundo opaco (mistura de papel e painel, o mesmo tom de antes): com o cabeçalho fixo, um fundo
+      // translúcido deixaria as linhas aparecerem por baixo dele durante a rolagem.
+      className={`whitespace-nowrap bg-[color-mix(in_srgb,var(--color-paper)_70%,var(--color-sheet))] px-4 py-2.5 text-xs font-medium text-muted shadow-[inset_0_-1px_0_var(--color-line)] ${ALIGN[align]} ${hideBelow ? HIDE_BELOW[hideBelow] : ""} ${className}`}
     >
       {children}
     </th>

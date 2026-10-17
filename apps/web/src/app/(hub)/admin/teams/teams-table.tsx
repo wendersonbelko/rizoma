@@ -11,7 +11,10 @@ type Row = {
   href: string;
 };
 
-/** Lista compacta dos times. Os membros ficam no painel do time aberto, não repetidos aqui. */
+/**
+ * Lista compacta dos times. Os membros ficam no painel do time aberto, não repetidos aqui; a coluna
+ * "Pessoas" mostra só os primeiros nomes. Cabeçalho fixo na rolagem da página, sem barra interna (achado D5).
+ */
 export function TeamsTable({ rows, pagination }: { rows: Row[]; pagination?: ReactNode }) {
   return (
     <DataTable tour="teams-first" caption="Times" minWidth={720} stickyHeader pagination={pagination}>

@@ -49,10 +49,10 @@ describe("aprovação de acesso", () => {
     current = await asCurrent(admin.id);
     const guest = await makeUser("x", { status: "PENDING" });
     const req = await prisma.accessRequest.create({ data: { userId: guest.id, expiresAt: new Date(Date.now() + 86_400_000) } });
-    await expect(decideAccessRequest(form({ requestId: req.id, decision: "approve", role: "ADMIN" }))).rejects.toThrow(/OWNER/);
+    await expect(decideAccessRequest(form({ requestId: req.id, decision: "approve", role: "ADMIN" }))).rejects.toThrow(/Proprietário/);
 
     const own = await prisma.accessRequest.create({ data: { userId: admin.id, expiresAt: new Date(Date.now() + 86_400_000) } });
-    await expect(decideAccessRequest(form({ requestId: own.id, decision: "approve" }))).rejects.toThrow(/próprio/);
+    await expect(decideAccessRequest(form({ requestId: own.id, decision: "approve" }))).rejects.toThrow(/própria solicitação/);
   });
 
   it("VIEWER não chega na ação", async () => {
@@ -109,7 +109,7 @@ describe("edição e arquivamento de serviços", () => {
     await expect(setArchived(form({ id: svc.id, archive: "1" }))).rejects.toThrow("NEXT_NOT_FOUND");
 
     current = await asCurrent((await makeUser("chefe", { role: "ADMIN" })).id);
-    await expect(setArchived(form({ id: svc.id, archive: "1" }))).rejects.toThrow("NEXT_REDIRECT:/admin/catalog");
+    await expect(setArchived(form({ id: svc.id, archive: "1" }))).rejects.toThrow("NEXT_REDIRECT:/admin/services");
     expect((await prisma.service.findUniqueOrThrow({ where: { id: svc.id } })).archivedAt).not.toBeNull();
     expect(await prisma.serviceToken.count({ where: { serviceId: svc.id, revokedAt: null } })).toBe(0);
   });

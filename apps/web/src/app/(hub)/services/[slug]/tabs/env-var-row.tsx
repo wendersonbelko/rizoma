@@ -1,8 +1,9 @@
 import { Markdown } from "@/components/markdown";
-import { RowActionButton, RowActionLink, RowActions, Td, Tr } from "@/components/table";
+import { RowActionLink, RowActions, Td, Tr } from "@/components/table";
 import { Badge } from "@/components/ui";
 import { deleteEnvVar } from "../actions";
 import { RevealButton } from "../forms/reveal-button";
+import { UndoRemove } from "../forms/undo-remove";
 import type { HrefFor } from "../types";
 
 type EnvVar = { id: string; key: string; value: string | null; isSecret: boolean; description: string | null };
@@ -25,7 +26,7 @@ export function EnvVarRow({ envVar, canEdit, canReveal, hrefFor }: { envVar: Env
         {canEdit && (
           <RowActions>
             <RowActionLink href={hrefFor({ var: envVar.key })}>Editar</RowActionLink>
-            <form action={deleteEnvVar}><input type="hidden" name="id" value={envVar.id} /><RowActionButton tone="danger">Excluir</RowActionButton></form>
+            <UndoRemove action={deleteEnvVar} id={envVar.id} label="Excluir" removedLabel="Variável excluída" />
           </RowActions>
         )}
       </Td>

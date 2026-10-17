@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   const { rows, info: { total } } = await queryAudit(f, { page: 1, pageSize: MAX_ROWS });
   const lines = [
     ["quando", "quem", "acao", "alvo_tipo", "alvo_id", "ip", "detalhes"].join(","),
-    ...rows.map((r) => [r.createdAt.toISOString(), r.actor?.githubLogin ?? r.actor?.email ?? "sistema", r.action, r.targetType, r.targetId, r.ip, r.metadata].map(csvCell).join(",")),
+    ...rows.map((r) => [r.createdAt.toISOString(), r.actor?.githubLogin ?? r.actor?.email ?? r.actor?.name ?? "sistema", r.action, r.targetType, r.targetId, r.ip, r.metadata].map(csvCell).join(",")),
   ];
   await audit({ actorId: user.id, action: "audit.exported", metadata: { filters: f, rows: rows.length, total } });
 

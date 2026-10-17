@@ -1,52 +1,65 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState, useState } from "react";
+import { ROLE_LABEL } from "@api-hub/core/types";
 import { Button, Field, Input, Select } from "@/components/ui";
-import { RowActionButton, rowActionClass } from "@/components/table";
-import { inviteUser, passwordResetLink, type InviteResult } from "./actions";
+import { ModalActions } from "@/components/form-modal";
+import { inviteUser } from "./actions";
+import { LinkBox } from "./link-box";
 
-function LinkBox({ state }: { state: InviteResult }) {
-  if (!state.message) return null;
-  return (
-    <div className={`space-y-2 text-sm ${state.ok ? "" : "text-danger"}`}>
-      <p>{state.message}</p>
-      {state.url && (
-        <div className="flex items-center gap-2">
-          <code className="min-w-0 flex-1 truncate rounded-control border border-line bg-field px-2 py-1 font-mono text-[12px]">{state.url}</code>
-          <button type="button" className={rowActionClass()} onClick={() => navigator.clipboard?.writeText(state.url!)}>copiar</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
+/**
+ * Convite por e-mail. O formulário vive aqui, dentro do FormModal da página (id `invite`). Depois de
+ * gerar, o modal continua aberto mostrando o link para copiar; "Convidar outra pessoa" recomeça do zero.
+ */
 export function InviteForm({ canInviteAdmin }: { canInviteAdmin: boolean }) {
-  const [state, action, pending] = useActionState(inviteUser, { ok: false });
-  return (
-    <form action={action} className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-[1.4fr_1fr_160px]">
-        <Field label="E-mail"><Input name="email" type="email" required /></Field>
-        <Field label="Nome (opcional)"><Input name="name" /></Field>
-        <Field label="Papel">
-          <Select name="role" defaultValue="VIEWER">
-            <option value="VIEWER">VIEWER</option><option value="MAINTAINER">MAINTAINER</option>
-            {canInviteAdmin && <option value="ADMIN">ADMIN</option>}
-          </Select>
-        </Field>
-      </div>
-      <Button disabled={pending}>Gerar convite</Button>
-      <LinkBox state={state} />
-    </form>
-  );
+  const [round, setRound] = useState(0);
+  return <InviteBody key={round} canInviteAdmin={canInviteAdmin} onAnother={() => setRound((n) => n + 1)} />;
 }
 
-export function ResetLinkButton({ userId }: { userId: string }) {
-  const [state, action, pending] = useActionState(passwordResetLink, { ok: false });
+function InviteBody({ canInviteAdmin, onAnother }: { canInviteAdmin: boolean; onAnother: () => void }) {
+  const [state, dispatch, pending] = useActionState(inviteUser, { ok: false });
+
+  if (state.ok) {
+    return (
+      <div className="space-y-4">
+        <LinkBox ok message={state.message} url={state.url} />
+        <ModalActions cancelLabel="Fechar">
+          <Button type="button" onClick={onAnother}>Convidar outra pessoa</Button>
+        </ModalActions>
+      </div>
+    );
+  }
+
   return (
-    <form action={action} className="space-y-1 text-left">
-      <input type="hidden" name="userId" value={userId} />
-      <RowActionButton disabled={pending}>Link de nova senha</RowActionButton>
-      <LinkBox state={state} />
+    // onSubmit em vez de action={…}: o React limparia os campos depois do envio, e um e-mail digitado
+    // errado precisa continuar na tela para a pessoa corrigir.
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => dispatch(data));
+      }}
+      className="space-y-4"
+    >
+      <Field label="E-mail *" error={state.errors?.email}>
+        <Input name="email" type="email" required autoComplete="off" placeholder="nome@empresa.com" aria-invalid={!!state.errors?.email} />
+      </Field>
+      <Field label="Papel *" error={state.errors?.role} hint="O papel define o que a pessoa pode fazer. Você muda depois em Pessoas e acesso.">
+        <Select name="role" defaultValue="VIEWER" aria-invalid={!!state.errors?.role}>
+          <option value="VIEWER">{ROLE_LABEL.VIEWER}</option>
+          <option value="MAINTAINER">{ROLE_LABEL.MAINTAINER}</option>
+          {canInviteAdmin && <option value="ADMIN">{ROLE_LABEL.ADMIN}</option>}
+        </Select>
+      </Field>
+      <details className="rounded-control border border-line px-3 py-2 text-sm">
+        <summary className="cursor-pointer font-medium">Detalhes opcionais</summary>
+        <div className="mt-3">
+          <Field label="Nome" hint="Aparece na lista de pessoas até a pessoa entrar."><Input name="name" autoComplete="off" /></Field>
+        </div>
+      </details>
+      <ModalActions message={state.message ? <span className="text-danger">{state.message}</span> : undefined}>
+        <Button disabled={pending}>{pending ? "Gerando…" : "Gerar convite"}</Button>
+      </ModalActions>
     </form>
   );
 }

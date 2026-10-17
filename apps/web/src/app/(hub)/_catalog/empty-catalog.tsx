@@ -1,7 +1,10 @@
 import { EmptyState } from "@/components/empty-state";
 import { LinkButton } from "@/components/ui";
 
-/** Catálogo sem nenhum serviço cadastrado ainda (achado da auditoria de UX: precisa de um CTA). */
+/**
+ * Catálogo sem nenhum serviço cadastrado ainda (achado da auditoria de UX: precisa de um CTA).
+ * O botão abre o "Novo serviço" da página Serviços (contrato: /admin/services#new-service).
+ */
 export function EmptyCatalog({ canCreate }: { canCreate: boolean }) {
   return (
     <EmptyState
@@ -12,7 +15,7 @@ export function EmptyCatalog({ canCreate }: { canCreate: boolean }) {
           ? "Cadastre um serviço para publicar a documentação da API, as regras de negócio e as integrações dele."
           : "Peça a um mantenedor ou administrador para cadastrar o primeiro serviço."
       }
-      action={canCreate ? <LinkButton href="/admin/catalog#new-service">+ Cadastrar meu primeiro serviço</LinkButton> : undefined}
+      action={canCreate ? <LinkButton href="/admin/services#new-service">Cadastrar meu primeiro serviço</LinkButton> : undefined}
     />
   );
 }

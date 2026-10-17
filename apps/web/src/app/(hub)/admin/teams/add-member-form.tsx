@@ -1,34 +1,46 @@
 "use client";
 
-import { useActionState } from "react";
-import { Button, Input, Select } from "@/components/ui";
-import { FormModal, useCloseOnSuccess } from "@/components/form-modal";
+import { startTransition, useActionState, useState } from "react";
+import { TEAM_ROLE_LABEL } from "@api-hub/core/types";
+import { Button, Field, Input, Select } from "@/components/ui";
+import { FormModal, ModalActions, useCloseOnSuccess } from "@/components/form-modal";
 import { addMember } from "./actions";
 
-async function submit(_prev: { ok: boolean; message: string }, form: FormData) {
-  try {
-    await addMember(form);
-    return { ok: true, message: "" };
-  } catch (e) {
-    return { ok: false, message: e instanceof Error ? e.message : "Não foi possível adicionar." };
-  }
+/** Adicionar membro abre um modal, em vez de um formulário fixo na lista. O <form> vive no componente filho (ver create-form.tsx). */
+export function AddMemberForm({ teamId }: { teamId: string }) {
+  const [opening, setOpening] = useState(0);
+  return (
+    <FormModal label="Adicionar membro" title="Adicionar membro" tone="quiet" size="sm" onOpen={() => setOpening((n) => n + 1)}>
+      <MemberForm key={opening} teamId={teamId} />
+    </FormModal>
+  );
 }
 
-/** Adicionar membro abre um modal, em vez de um formulário fixo na lista. */
-export function AddMemberForm({ teamId }: { teamId: string }) {
-  const [state, action, pending] = useActionState(submit, { ok: false, message: "" });
+function MemberForm({ teamId }: { teamId: string }) {
+  const [state, dispatch, pending] = useActionState(addMember, { ok: false });
   useCloseOnSuccess(state, pending);
   return (
-    <FormModal label="Adicionar membro" title="Adicionar membro" tone="quiet">
-      <form action={action} className="space-y-4">
-        <input type="hidden" name="teamId" value={teamId} />
-        <Input name="login" aria-label="Usuário do GitHub ou e-mail" placeholder="@fulano ou fulano@empresa.com" required />
-        <Select name="role" aria-label="Papel no time"><option value="MEMBER">Membro</option><option value="LEAD">Líder</option></Select>
-        <div className="flex items-center gap-4">
-          <Button disabled={pending}>{pending ? "Adicionando…" : "Adicionar membro"}</Button>
-          {state.message && <p className="text-sm text-danger">{state.message}</p>}
-        </div>
-      </form>
-    </FormModal>
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const data = new FormData(e.currentTarget);
+        startTransition(() => dispatch(data));
+      }}
+      className="space-y-4"
+    >
+      <input type="hidden" name="teamId" value={teamId} />
+      <Field label="@usuário do GitHub ou e-mail *" error={state.errors?.login} hint="A pessoa precisa ter acesso ativo ao hub.">
+        <Input name="login" placeholder="@fulano ou fulano@empresa.com" required autoComplete="off" aria-invalid={!!state.errors?.login} />
+      </Field>
+      <Field label="Papel no time *" error={state.errors?.role}>
+        <Select name="role" defaultValue="MEMBER">
+          <option value="MEMBER">{TEAM_ROLE_LABEL.MEMBER}</option>
+          <option value="LEAD">{TEAM_ROLE_LABEL.LEAD}</option>
+        </Select>
+      </Field>
+      <ModalActions message={state.message && !state.ok ? <span className="text-danger">{state.message}</span> : undefined}>
+        <Button disabled={pending}>{pending ? "Adicionando…" : "Adicionar membro"}</Button>
+      </ModalActions>
+    </form>
   );
 }

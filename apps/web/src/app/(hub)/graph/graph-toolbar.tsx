@@ -1,82 +1,56 @@
-import type { NodeKind } from "@api-hub/core/graph";
-import { SERVICE_KIND_LABEL, SERVICE_KINDS, type ServiceKind } from "@api-hub/core/types";
-import { KIND, type GraphMode } from "./constants";
+"use client";
 
-/** Barra de controles do mapa: modo, filtros de tipo, distância do foco e o toast de sucesso. */
-export function GraphToolbar({ mode, onModeChange, kinds, onKindsChange, serviceKinds, onServiceKindsChange, focus, onShowAll, depth, onDepthChange, pickLimit, onPickLimit, pickCount, pickMax, toast }: {
-  mode: GraphMode; onModeChange: (m: GraphMode) => void;
-  kinds: NodeKind[]; onKindsChange: (kinds: NodeKind[]) => void;
-  serviceKinds: ServiceKind[]; onServiceKindsChange: (kinds: ServiceKind[]) => void;
-  focus: boolean; onShowAll: () => void;
-  depth: number; onDepthChange: (d: number) => void;
-  pickLimit: number; onPickLimit: (n: number) => void; pickCount: number; pickMax: number;
-  toast: string | undefined;
+import type { FocusScope, GraphNode, NodeKind } from "@api-hub/core/graph";
+import type { ServiceKind } from "@api-hub/core/types";
+import { FOCUS_SCOPES, type GraphMode } from "./constants";
+import { FocusPicker } from "./focus-picker";
+import { TypesMenu } from "./types-menu";
+
+/** Grupo de botões de escolha única (Mapa/Lista, 1º grau/2º grau/Tudo): o mesmo desenho nos dois. */
+function Segmented<T extends string | number>({ label, value, options, onChange, tour }: {
+  label: string; value: T; options: { id: T; label: string; hint?: string }[]; onChange: (id: T) => void; tour?: string;
 }) {
   return (
-    <div data-tour="graph-toolbar" className="flex flex-wrap items-center gap-2">
-      <div data-tour="graph-mode" className="flex rounded-control border border-line bg-sheet p-0.5" role="group" aria-label="Modo de exibição">
-        {(["map", "list"] as const).map((m) => (
-          <button
-            key={m} type="button" aria-pressed={mode === m} onClick={() => onModeChange(m)}
-            className={`rounded-[8px] px-3 py-1.5 text-sm ${mode === m ? "bg-accent font-semibold text-accent-ink" : "text-muted hover:text-ink"}`}
-          >
-            {m === "map" ? "Mapa" : "Lista"}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {(Object.keys(KIND) as NodeKind[]).map((k) => {
-          const on = kinds.includes(k);
-          return (
-            <button
-              key={k} type="button" aria-pressed={on}
-              onClick={() => onKindsChange(on ? kinds.filter((x) => x !== k) : [...kinds, k])}
-              className={`rounded-full border px-3 py-1 text-sm ${on ? "border-accent/40 bg-accent/12 font-medium text-accent" : "border-line text-muted hover:text-ink"}`}
-            >
-              {KIND[k].label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {SERVICE_KINDS.map((k) => {
-          const on = serviceKinds.includes(k);
-          return (
-            <button
-              key={k} type="button" aria-pressed={on}
-              onClick={() => onServiceKindsChange(on ? serviceKinds.filter((x) => x !== k) : [...serviceKinds, k])}
-              className={`rounded-full border px-3 py-1 text-sm ${on ? "border-line bg-sheet font-medium text-ink" : "border-transparent text-muted hover:text-ink"}`}
-            >
-              {SERVICE_KIND_LABEL[k]}
-            </button>
-          );
-        })}
-      </div>
-      {focus && (
-        <div className="flex items-center gap-2 text-sm">
-          <label className="flex items-center gap-2 text-muted">
-            Vizinhança
-            <select value={depth} onChange={(e) => onDepthChange(Number(e.target.value))} className="rounded-control border border-line bg-field px-2 py-1 text-ink">
-              {[1, 2, 3, 4].map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
-          </label>
-          <button type="button" className="font-medium text-accent" onClick={onShowAll}>Mostrar tudo</button>
-        </div>
-      )}
-      {toast && <span role="status" className="text-sm text-accent">{toast}</span>}
-      <label className="ml-auto flex items-center gap-2 text-sm text-muted">
-        Selecionar até
-        <input
-          type="number"
-          min={1}
-          max={pickMax}
-          value={pickLimit}
-          aria-label="Quantos itens podem ser selecionados"
-          onChange={(e) => onPickLimit(Number(e.target.value))}
-          className="h-8 w-14 rounded-control border border-line bg-field px-2 text-ink"
-        />
-        <span className="text-xs">{pickCount > 0 ? `${pickCount}/${Math.min(pickLimit, pickMax)}` : `máx. ${pickMax}`}</span>
-      </label>
+    <div data-tour={tour} role="group" aria-label={label} className="flex rounded-control border border-line-strong bg-field p-0.5">
+      {options.map((o) => (
+        <button
+          key={String(o.id)} type="button" aria-pressed={value === o.id} title={o.hint} onClick={() => onChange(o.id)}
+          className={`h-8 rounded-[8px] px-3 text-sm ${value === o.id ? "bg-accent font-semibold text-accent-ink" : "text-muted hover:text-ink"}`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const MODES: { id: GraphMode; label: string }[] = [{ id: "map", label: "Mapa" }, { id: "list", label: "Lista" }];
+const SCOPE_HINT: Record<string, string> = { "1": "Só os vizinhos diretos do foco", "2": "Os vizinhos e os vizinhos deles", all: "Todos os itens, sem esmaecer" };
+
+/**
+ * Barra de controles do mapa: modo, foco, alcance e tipos. Achado D1 da auditoria de UX de
+ * 02/10/2026: sai o "Selecionar até N" e entram "Foco ▾" e "1º grau · 2º grau · Tudo".
+ */
+export function GraphToolbar({ mode, onModeChange, nodes, focusId, onFocus, scope, onScopeChange, kinds, onKindsChange, serviceKinds, onServiceKindsChange, summary }: {
+  mode: GraphMode; onModeChange: (m: GraphMode) => void;
+  /** Itens que podem receber o foco (já filtrados por tipo). */
+  nodes: GraphNode[]; focusId?: string; onFocus: (id: string) => void;
+  scope: FocusScope; onScopeChange: (s: FocusScope) => void;
+  kinds: NodeKind[]; onKindsChange: (kinds: NodeKind[]) => void;
+  serviceKinds: ServiceKind[]; onServiceKindsChange: (kinds: ServiceKind[]) => void;
+  /** Quantos itens estão em foco, para a pessoa saber o que o esmaecimento escondeu. */
+  summary: string;
+}) {
+  return (
+    <div data-tour="graph-toolbar" className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <Segmented tour="graph-mode" label="Modo de exibição" value={mode} options={MODES} onChange={onModeChange} />
+      <FocusPicker nodes={nodes} focusId={focusId} onPick={onFocus} />
+      <Segmented
+        tour="graph-depth" label="Alcance do foco" value={scope} onChange={onScopeChange}
+        options={FOCUS_SCOPES.map((s) => ({ ...s, hint: SCOPE_HINT[String(s.id)] }))}
+      />
+      <TypesMenu kinds={kinds} onKindsChange={onKindsChange} serviceKinds={serviceKinds} onServiceKindsChange={onServiceKindsChange} />
+      <p role="status" className="ml-auto text-sm text-muted">{summary}</p>
     </div>
   );
 }

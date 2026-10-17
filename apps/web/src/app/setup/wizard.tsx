@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { CREDITS, SETUP_STEPS, type SetupStepId } from "@api-hub/core/setup";
 import { PROVIDER_META, type AuthProviderType } from "@api-hub/core/auth-providers";
 import { SOURCE_META } from "@api-hub/core/sources";
+import { ROLE_LABEL } from "@api-hub/core/types";
 import { ChipInput } from "@/components/chip-input";
-import { Badge, Button, Field, Input, Notice, Select } from "@/components/ui";
+import { Badge, Button, Field, Input, Notice } from "@/components/ui";
 import {
-  EnvironmentsEditor, ProvidersEditor, SourcesEditor, providersPayload, sourcesPayload,
+  EnvironmentsEditor, PolicyFields, ProvidersEditor, SourcesEditor, providersPayload, sourcesPayload,
   type EnvDraft, type ProviderDraft, type SourceDraft,
 } from "@/components/config-editors";
 import { MailEditor, emptyMail, mailPayload, type MailDraft } from "@/components/mail-editor";
@@ -121,7 +122,7 @@ export function SetupWizard() {
           <div className="space-y-6">
             <div className="max-w-prose space-y-2 text-sm">
               <p>O Rizoma é o catálogo interno das APIs da empresa: a documentação de cada serviço, quem chama quem, as variáveis de ambiente e quem pode entrar.</p>
-              <p className="text-muted">Este assistente deixa a instalação pronta. O que você salvar aqui continua editável em Administração. Só o identificador da empresa não muda depois.</p>
+              <p className="text-muted">Este assistente deixa a instalação pronta. O que você salvar aqui continua editável em Configurações. Só o identificador da empresa não muda depois.</p>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
@@ -131,7 +132,7 @@ export function SetupWizard() {
                   <li><span className="font-medium text-ink">Banco.</span> Conferir a conexão e as migrações.</li>
                   <li><span className="font-medium text-ink">Entrada.</span> Como as pessoas entram, e o e-mail de convite (pode pular).</li>
                   <li><span className="font-medium text-ink">Empresa.</span> Nome, vínculo, repositórios, regras de acesso e ambientes.</li>
-                  <li><span className="font-medium text-ink">Administrador.</span> Quem será o primeiro OWNER.</li>
+                  <li><span className="font-medium text-ink">Administrador.</span> Quem será o primeiro Proprietário.</li>
                 </ol>
               </div>
               <div className="rounded-control border border-line bg-field p-4">
@@ -147,7 +148,7 @@ export function SetupWizard() {
             </div>
 
             <Notice tone="wait" title="Mantenha esta URL privada até concluir">
-              Não há token de instalação. Quem abrir o hub antes do fim pode se definir como administrador. Restrinja o acesso (firewall, VPN ou lista de IPs) até existir um OWNER.
+              Não há token de instalação. Quem abrir o hub antes do fim pode se definir como administrador. Restrinja o acesso (firewall, VPN ou lista de IPs) até existir um Proprietário.
             </Notice>
 
             <p className="text-sm text-muted">O progresso fica salvo no banco assim que a conexão estiver pronta. Fechar o navegador não perde o que já foi gravado. Você pode voltar a uma etapa anterior; não dá para pular para a frente.</p>
@@ -173,8 +174,8 @@ export function SetupWizard() {
 
         {active === "email" && (
           <div className="space-y-6">
-            <MailEditor grouped value={mail} onChange={setMail} />
-            <Field label="E-mail de prova" hint="Opcional. Se preencher, o teste também envia uma mensagem.">
+            <MailEditor value={mail} onChange={setMail} />
+            <Field label="E-mail de prova" hint="Opcional: o teste também envia uma mensagem para este endereço.">
               <Input type="email" value={probeTo} onChange={(e) => setProbeTo(e.target.value)} />
             </Field>
             {probeNote && <p role="status" className="text-sm text-muted">{probeNote}</p>}
@@ -203,10 +204,10 @@ export function SetupWizard() {
             });
           }}>
             <div className="grid gap-5 sm:grid-cols-2">
-              <Field label="Nome da empresa"><Input name="orgName" defaultValue={d.orgName ?? ""} required /></Field>
-              <Field label="Identificador" hint="Usado em logs. Ex.: acme"><Input name="orgSlug" defaultValue={d.orgSlug ?? ""} required /></Field>
+              <Field label="Nome da empresa *"><Input name="orgName" defaultValue={d.orgName ?? ""} required /></Field>
+              <Field label="Identificador *" hint="Curto e sem espaços, como acme. Não muda depois."><Input name="orgSlug" defaultValue={d.orgSlug ?? ""} required /></Field>
             </div>
-            <Field label="Título do sistema" hint="Aparece no topo, na aba do navegador e no login. Dá para mudar depois em Aparência.">
+            <Field label="Título do sistema *" hint="Aparece no topo, na aba do navegador e no login. Dá para mudar depois em Configurações, na aba Aparência.">
               <Input name="appName" defaultValue={d.appName} required />
             </Field>
             <Field label="Domínios de e-mail da empresa" hint="Digite um domínio e clique em +. Valem para Google, Microsoft, GitLab e OIDC.">
@@ -240,29 +241,7 @@ export function SetupWizard() {
             });
           }}>
             {d.warnings.map((w) => <Notice key={w} tone="wait">{w}</Notice>)}
-            <div className="space-y-4 rounded-control border border-line bg-field p-4">
-              <label className="flex items-start gap-3">
-                <input type="checkbox" name="auto" defaultChecked={d.autoApproveOrgMembers} className="mt-1 size-4 accent-accent" />
-                <span>
-                  <strong>Liberar automaticamente quem comprova vínculo com a empresa</strong>
-                  <span className="mt-0.5 block text-sm text-muted">Organização do GitHub, domínio de e-mail ou tenant da Microsoft. Desmarcado, todo mundo passa pela aprovação.</span>
-                </span>
-              </label>
-              <Field label="Quem não comprova vínculo" hint="Convites continuam valendo mesmo se a entrada estiver bloqueada.">
-                <Select name="outsider" defaultValue={d.outsiderPolicy}>
-                  <option value="REQUEST_APPROVAL">Pode pedir acesso e aguardar aprovação</option>
-                  <option value="BLOCK">Não pode entrar (convites continuam valendo)</option>
-                </Select>
-              </Field>
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold tracking-tight">Prazos</h3>
-              <div className="grid gap-5 sm:grid-cols-3">
-                <Field label="Sessão (horas)" hint="Tempo até pedir login de novo."><Input name="session" type="number" min={1} max={72} defaultValue={d.sessionMaxAgeHours} /></Field>
-                <Field label="Revalidar vínculo (horas)" hint="De quanto em quanto tempo o hub confere se a pessoa ainda pertence à empresa."><Input name="recheck" type="number" min={1} max={72} defaultValue={d.membershipRecheckHours} /></Field>
-                <Field label="Pedido expira (dias)" hint="Pedidos de acesso não decididos somem depois disso."><Input name="ttl" type="number" min={1} max={90} defaultValue={d.accessRequestTtlDays} /></Field>
-              </div>
-            </div>
+            <PolicyFields defaults={{ auto: d.autoApproveOrgMembers, outsider: d.outsiderPolicy, session: d.sessionMaxAgeHours, recheck: d.membershipRecheckHours, ttl: d.accessRequestTtlDays }} />
             <Button disabled={pending}>Salvar e continuar</Button>
           </form>
         )}
@@ -278,7 +257,7 @@ export function SetupWizard() {
           <div className="space-y-8">
             {state.owner?.claimedBy ? (
               <div>
-                <p className="mb-3 flex flex-wrap items-center gap-2 text-sm"><Badge tone="accent">Definido</Badge> <strong>{state.owner.claimedBy}</strong> é o OWNER desta instalação.</p>
+                <p className="mb-3 flex flex-wrap items-center gap-2 text-sm"><Badge tone="accent">Definido</Badge> <strong>{state.owner.claimedBy}</strong> é o Proprietário desta instalação.</p>
                 <Button onClick={() => start(async () => { await confirmOwner(); await load(); })} disabled={pending}>Continuar</Button>
               </div>
             ) : (
@@ -338,12 +317,12 @@ export function SetupWizard() {
               <dd>{[d.allowedEmailDomains.length && `domínios ${d.allowedEmailDomains.join(", ")}`, d.allowedGithubOrgs.length && `orgs GitHub ${d.allowedGithubOrgs.join(", ")}`].filter(Boolean).join(" · ") || "nenhum: todos pedem acesso"}</dd>
               <dt className="text-muted">Repositórios</dt><dd>{d.sources.map((s) => SOURCE_META[s.type].label).join(", ") || "sem integração"}</dd>
               <dt className="text-muted">Ambientes</dt><dd>{d.environments.map((e) => `${e.name} (${e.branchPatterns.join(", ")})`).join(" · ")}</dd>
-              <dt className="text-muted">Quem é da empresa</dt><dd>{d.autoApproveOrgMembers ? "entra direto como VIEWER" : "precisa de aprovação"}</dd>
+              <dt className="text-muted">Quem é da empresa</dt><dd>{d.autoApproveOrgMembers ? `entra direto como ${ROLE_LABEL.VIEWER}` : "precisa de aprovação"}</dd>
               <dt className="text-muted">Quem não é</dt><dd>{d.outsiderPolicy === "BLOCK" ? "não entra" : "pede acesso"}</dd>
-              <dt className="text-muted">OWNER</dt><dd>{state.owner?.claimedBy}</dd>
+              <dt className="text-muted">Proprietário</dt><dd>{state.owner?.claimedBy}</dd>
             </dl>
             {d.warnings.map((w) => <Notice key={w} tone="wait">{w}</Notice>)}
-            <p className="max-w-prose text-sm text-muted">Ao concluir, este assistente fica bloqueado. Tudo isso continua editável em Administração.</p>
+            <p className="max-w-prose text-sm text-muted">Ao concluir, este assistente fica bloqueado. Tudo isso continua editável em Configurações.</p>
             <Button onClick={() => submit("review", { confirm: true })} disabled={pending}>Concluir instalação</Button>
           </div>
         )}

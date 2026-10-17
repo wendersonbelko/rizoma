@@ -1,15 +1,23 @@
-/** Rótulos compartilhados pelas listas de Pessoas e acesso. */
-export const ACTION_LABEL: Record<string, string> = {
-  "access.requested": "pediu acesso",
-  "access.approved": "aprovou um acesso",
-  "access.rejected": "recusou um acesso",
-  "access.denied": "teve o login barrado",
-  "access.status_changed": "status alterado automaticamente",
-  "access.reason_updated": "enviou justificativa",
-};
+import type { BadgeTone } from "@/components/ui";
 
+/** Rótulos compartilhados pelas telas de Pessoas e acesso. */
 export const STATUS_LABEL = { ACTIVE: "ativo", PENDING: "aguardando", SUSPENDED: "suspenso", REJECTED: "recusado" } as const;
+export type PersonStatus = keyof typeof STATUS_LABEL;
+export const STATUS_TONE: Record<PersonStatus, BadgeTone> = { ACTIVE: "accent", PENDING: "wait", SUSPENDED: "danger", REJECTED: "danger" };
 
-/** Como nomear uma pessoa: login do GitHub, senão e-mail, senão nome. */
-export const who = (u: { githubLogin: string | null; email: string | null; name?: string | null }) =>
-  u.githubLogin ? `@${u.githubLogin}` : (u.email ?? u.name ?? "—");
+/** De onde veio o acesso da pessoa, em palavras. */
+export function accessOrigin(p: { isOrgMember: boolean; accessGrant: string | null }): string {
+  if (p.isOrgMember) return "da empresa";
+  if (p.accessGrant === "OWNER_SETUP") return "instalação";
+  return p.accessGrant === "MANUAL_APPROVAL" ? "aprovado ou convidado" : "externo";
+}
+
+const ROLE_WORDS: Record<string, string> = { OWNER: "Proprietário", ADMIN: "Administrador", MAINTAINER: "Mantenedor", VIEWER: "Leitor" };
+
+/**
+ * Mensagens que vêm das regras do core ("Somente um OWNER pode…") citam o código do papel. Na tela
+ * o código não aparece (achado V2 da auditoria de UX de 02/10/2026): troca pelo nome do papel.
+ */
+export function plainRoles(message: string): string {
+  return message.replace(/\b(OWNER|ADMIN|MAINTAINER|VIEWER)\b/g, (code) => ROLE_WORDS[code] ?? code);
+}

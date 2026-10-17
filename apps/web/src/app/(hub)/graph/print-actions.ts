@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { personLabel } from "@api-hub/core";
 import { prisma } from "@api-hub/db";
 import { requirePermission } from "@/lib/guards";
 
@@ -13,7 +14,8 @@ export type GraphPrintLog = {
 /** Grava quem gerou o print, quando, os filtros e as ligações desenhadas. A imagem não vai para o banco. */
 export async function recordGraphPrint(input: GraphPrintLog) {
   const actor = await requirePermission("graph:read");
-  const who = actor.githubLogin ? `@${actor.githubLogin}` : actor.name ?? actor.email ?? "usuário";
+  // Nome da pessoa, nunca "null" (achado V1 da auditoria de UX de 02/10/2026).
+  const who = personLabel(actor, "usuário");
   let ip: string | undefined;
   try {
     const h = await headers();

@@ -71,63 +71,72 @@ export function DatabaseStep({ onRefresh }: { onRefresh: () => void }) {
       </div>
     );
 
+  // Achado V5 da auditoria de UX de 02/10/2026: começa pelo propósito e deixa o jargão (DATABASE_URL, motor, URL de
+  // conexão) em "Avançado". Quem subiu o projeto pelo docker-compose só precisa esperar e verificar de novo.
   return (
     <div className="space-y-6">
-      <p className="max-w-prose text-sm text-muted">
-        O servidor ainda não enxerga um banco em <code className="font-mono">DATABASE_URL</code>. O <code className="font-mono">docker-compose.yml</code> já sobe um
-        PostgreSQL pronto para uso; se preferir apontar para o seu próprio banco, teste a conexão abaixo e copie o trecho gerado para o seu <code className="font-mono">.env</code>.
-      </p>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {status.engines.map((e) => (
-          <button key={e.id} type="button" disabled={!e.supported} onClick={() => setEngine(e.id)}
-            className={`rounded-control border px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${engine === e.id ? "border-accent bg-field" : "border-line"}`}>
-            {ENGINE_LABEL[e.id] ?? e.id}
-            {!e.supported && <span className="block text-xs text-muted">Em breve</span>}
-          </button>
-        ))}
+      <div className="max-w-prose space-y-2 text-sm text-muted">
+        <p>O Rizoma guarda tudo num banco de dados. Este servidor ainda não encontrou um banco conectado.</p>
+        <p>Se você subiu o projeto pelo <code className="font-mono">docker-compose.yml</code>, o PostgreSQL já vem pronto: espere alguns segundos e verifique de novo.</p>
       </div>
+      <Button onClick={load}>Verificar novamente</Button>
 
-      <div className="flex gap-1 text-sm" role="tablist">
-        {(["fields", "url"] as const).map((m) => (
-          <button key={m} type="button" onClick={() => setMode(m)} className={`rounded-control px-3 py-1 ${mode === m ? "bg-paper font-semibold" : "text-muted"}`}>
-            {m === "fields" ? "Campos separados" : "URL completa"}
-          </button>
-        ))}
-      </div>
+      <details className="rounded-control border border-line bg-paper/60 px-3 py-2">
+        <summary className="cursor-pointer text-sm font-medium">Avançado: usar o seu próprio banco</summary>
+        <div className="mt-4 space-y-6">
+          <p className="max-w-prose text-sm text-muted">
+            O servidor lê o banco da variável <code className="font-mono">DATABASE_URL</code> ao iniciar. Teste a conexão abaixo e copie o trecho gerado para o <code className="font-mono">.env</code> do servidor.
+          </p>
 
-      {mode === "fields" ? (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Host"><Input value={fields.host} onChange={(e) => setFields({ ...fields, host: e.target.value })} /></Field>
-          <Field label="Porta"><Input value={fields.port} onChange={(e) => setFields({ ...fields, port: e.target.value })} inputMode="numeric" /></Field>
-          <Field label="Banco"><Input value={fields.database} onChange={(e) => setFields({ ...fields, database: e.target.value })} /></Field>
-          <Field label="Usuário"><Input value={fields.user} onChange={(e) => setFields({ ...fields, user: e.target.value })} /></Field>
-          <Field label="Senha"><Input type="password" value={fields.password} onChange={(e) => setFields({ ...fields, password: e.target.value })} autoComplete="off" /></Field>
-          <label className="mt-6 flex items-center gap-2 text-sm"><input type="checkbox" checked={fields.ssl} onChange={(e) => setFields({ ...fields, ssl: e.target.checked })} className="accent-accent" /> Exigir SSL</label>
-        </div>
-      ) : (
-        <Field label="URL de conexão"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="postgresql://usuario:senha@host:5432/banco" autoComplete="off" /></Field>
-      )}
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {status.engines.map((e) => (
+              <button key={e.id} type="button" disabled={!e.supported} onClick={() => setEngine(e.id)}
+                className={`rounded-control border px-3 py-2 text-left text-sm disabled:cursor-not-allowed disabled:opacity-40 ${engine === e.id ? "border-accent bg-field" : "border-line"}`}>
+                {ENGINE_LABEL[e.id] ?? e.id}
+                {!e.supported && <span className="block text-xs text-muted">Em breve</span>}
+              </button>
+            ))}
+          </div>
 
-      <div className="flex items-center gap-4">
-        <Button tone="quiet" disabled={testing} onClick={test}>{testing ? "Testando…" : "Testar conexão"}</Button>
-        <Button tone="quiet" onClick={load}>Verificar novamente</Button>
-      </div>
+          <div className="flex gap-1 text-sm" role="tablist">
+            {(["fields", "url"] as const).map((m) => (
+              <button key={m} type="button" onClick={() => setMode(m)} className={`rounded-control px-3 py-1 ${mode === m ? "bg-paper font-semibold" : "text-muted"}`}>
+                {m === "fields" ? "Campos separados" : "URL completa"}
+              </button>
+            ))}
+          </div>
 
-      {result && (
-        <div className={`space-y-2 text-sm ${result.ok ? "" : "text-danger"}`}>
-          <p>{result.ok ? "Conexão OK." : result.error}</p>
-          {result.envSnippet && (
-            <div className="space-y-1">
-              <p className="text-muted">Cole no <code className="font-mono">.env</code> do servidor e reinicie (ex.: <code className="font-mono">docker compose --profile app up -d --build</code>). Depois clique em “Verificar novamente”.</p>
-              <div className="flex items-center gap-2">
-                <code className="min-w-0 flex-1 truncate rounded-control border border-line bg-field px-2 py-1 font-mono text-[12px]">{result.envSnippet}</code>
-                <button type="button" className="text-accent" onClick={() => navigator.clipboard?.writeText(result.envSnippet!)}>copiar</button>
-              </div>
+          {mode === "fields" ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Host"><Input value={fields.host} onChange={(e) => setFields({ ...fields, host: e.target.value })} /></Field>
+              <Field label="Porta"><Input value={fields.port} onChange={(e) => setFields({ ...fields, port: e.target.value })} inputMode="numeric" /></Field>
+              <Field label="Banco"><Input value={fields.database} onChange={(e) => setFields({ ...fields, database: e.target.value })} /></Field>
+              <Field label="Usuário"><Input value={fields.user} onChange={(e) => setFields({ ...fields, user: e.target.value })} /></Field>
+              <Field label="Senha"><Input type="password" value={fields.password} onChange={(e) => setFields({ ...fields, password: e.target.value })} autoComplete="off" /></Field>
+              <label className="mt-6 flex items-center gap-2 text-sm"><input type="checkbox" checked={fields.ssl} onChange={(e) => setFields({ ...fields, ssl: e.target.checked })} className="accent-accent" /> Exigir SSL</label>
+            </div>
+          ) : (
+            <Field label="URL de conexão"><Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="postgresql://usuario:senha@host:5432/banco" autoComplete="off" /></Field>
+          )}
+
+          <Button tone="quiet" disabled={testing} onClick={test}>{testing ? "Testando…" : "Testar conexão"}</Button>
+
+          {result && (
+            <div className={`space-y-2 text-sm ${result.ok ? "" : "text-danger"}`}>
+              <p>{result.ok ? "Conexão OK." : result.error}</p>
+              {result.envSnippet && (
+                <div className="space-y-1">
+                  <p className="text-muted">Cole no <code className="font-mono">.env</code> do servidor e reinicie (ex.: <code className="font-mono">docker compose --profile app up -d --build</code>). Depois clique em “Verificar novamente”.</p>
+                  <div className="flex items-center gap-2">
+                    <code className="min-w-0 flex-1 truncate rounded-control border border-line bg-field px-2 py-1 font-mono text-[12px]">{result.envSnippet}</code>
+                    <button type="button" className="text-accent" onClick={() => navigator.clipboard?.writeText(result.envSnippet!)}>copiar</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </details>
     </div>
   );
 }

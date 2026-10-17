@@ -2,10 +2,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@api-hub/db";
-import { ROLES, canChangeRole, type Role } from "@api-hub/core";
+import { ROLES, ROLE_LABEL, canChangeRole, type Role } from "@api-hub/core";
 import { createInvite } from "@/lib/local-auth";
 import { requirePermission } from "@/lib/guards";
 import { audit } from "@/lib/audit";
+import { plainRoles } from "./labels";
 
 const decideSchema = z.object({
   requestId: z.string(),
@@ -15,16 +16,16 @@ const decideSchema = z.object({
   note: z.string().max(300).optional(),
 });
 
-/** RN-11 a RN-13: decisão sobre pedido de acesso. */
+/** RN-11 a RN-13: decisão sobre solicitação de acesso. */
 export async function decideAccessRequest(form: FormData) {
   const actor = await requirePermission("access:decide");
   const d = decideSchema.parse(Object.fromEntries(form));
-  // RN-13: ADMIN só concede até MAINTAINER.
-  if (d.role === "ADMIN" && actor.role !== "OWNER") throw new Error("Só um OWNER concede o papel ADMIN.");
+  // RN-13: o Administrador só concede até Mantenedor.
+  if (d.role === "ADMIN" && actor.role !== "OWNER") throw new Error(`Só um ${ROLE_LABEL.OWNER} concede o papel ${ROLE_LABEL.ADMIN}.`);
 
   const req = await prisma.accessRequest.findUniqueOrThrow({ where: { id: d.requestId } });
   if (req.status !== "PENDING") return;
-  if (req.userId === actor.id) throw new Error("Você não pode decidir o próprio pedido.");
+  if (req.userId === actor.id) throw new Error("Você não pode decidir a própria solicitação.");
 
   const approve = d.decision === "approve";
   await prisma.$transaction([
@@ -47,26 +48,35 @@ export async function decideAccessRequest(form: FormData) {
   revalidatePath("/admin/people");
 }
 
-export async function changeRole(form: FormData) {
+export type PersonResult = { ok: boolean; message?: string };
+
+/**
+ * Troca o papel (RN-24, RN-25). Devolve a mensagem em vez de lançar: a pessoa vê o motivo no próprio
+ * formulário, sem tela de erro (achado F4 da auditoria de UX de 02/10/2026).
+ */
+export async function changeRole(_: PersonResult, form: FormData): Promise<PersonResult> {
   const actor = await requirePermission("user:manage");
-  const { userId, role } = z.object({ userId: z.string(), role: z.enum(ROLES as [string, ...string[]]) }).parse(Object.fromEntries(form));
+  const userId = z.string().parse(form.get("userId"));
+  const parsed = z.enum(ROLES as [Role, ...Role[]], { error: "Escolha um papel." }).safeParse(form.get("role"));
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message };
   const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   const ownerCount = await prisma.user.count({ where: { role: "OWNER" } });
-  const newRole = role as Role;
-  const check = canChangeRole({ actor, target, newRole, ownerCount });
-  if (!check.ok) throw new Error(check.reason);
-  await prisma.user.update({ where: { id: userId }, data: { role: newRole, tokenVersion: { increment: 1 } } });
-  await audit({ actorId: actor.id, action: "user.role_changed", targetType: "user", targetId: userId, metadata: { from: target.role, to: role } });
+  const check = canChangeRole({ actor, target, newRole: parsed.data, ownerCount });
+  if (!check.ok) return { ok: false, message: plainRoles(check.reason) };
+  if (target.role === parsed.data) return { ok: true, message: "O papel já era esse." };
+  await prisma.user.update({ where: { id: userId }, data: { role: parsed.data, tokenVersion: { increment: 1 } } });
+  await audit({ actorId: actor.id, action: "user.role_changed", targetType: "user", targetId: userId, metadata: { from: target.role, to: parsed.data } });
   revalidatePath("/admin/people");
+  return { ok: true, message: `Papel salvo: ${ROLE_LABEL[parsed.data]}. Vale na próxima página que a pessoa abrir.` };
 }
 
-/** RN-14: suspender derruba as sessões na hora. */
-export async function setSuspended(form: FormData) {
+/** RN-14: suspender derruba as sessões na hora. Reativar não encerra nada. */
+export async function setSuspended(form: FormData): Promise<PersonResult> {
   const actor = await requirePermission("user:manage");
   const { userId, suspend } = z.object({ userId: z.string(), suspend: z.enum(["1", "0"]) }).parse(Object.fromEntries(form));
   const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
-  if (target.id === actor.id) throw new Error("Você não pode suspender a si mesmo.");
-  if (target.role === "OWNER" && actor.role !== "OWNER") throw new Error("Só um OWNER suspende outro OWNER.");
+  if (target.id === actor.id) return { ok: false, message: "Você não pode suspender o próprio acesso." };
+  if (target.role === "OWNER" && actor.role !== "OWNER") return { ok: false, message: `Só um ${ROLE_LABEL.OWNER} suspende outro ${ROLE_LABEL.OWNER}.` };
 
   await prisma.user.update({
     where: { id: userId },
@@ -75,9 +85,10 @@ export async function setSuspended(form: FormData) {
   });
   await audit({ actorId: actor.id, action: suspend === "1" ? "user.suspended" : "user.reactivated", targetType: "user", targetId: userId });
   revalidatePath("/admin/people");
+  return { ok: true };
 }
 
-export type InviteResult = { ok: boolean; message?: string; url?: string };
+export type InviteResult = { ok: boolean; message?: string; url?: string; errors?: { email?: string; role?: string } };
 
 /** RN-107: convite por e-mail (login com senha). Com SMTP salvo, o hub envia o link e ainda o mostra para copiar. */
 export async function inviteUser(_: InviteResult, form: FormData): Promise<InviteResult> {
@@ -85,14 +96,21 @@ export async function inviteUser(_: InviteResult, form: FormData): Promise<Invit
   const cred = await prisma.authProvider.findUnique({ where: { type: "CREDENTIALS" } });
   if (!cred?.enabled) return { ok: false, message: "Ative o login por e-mail e senha em Configurações para convidar." };
   const parsed = z.object({
-    email: z.email("E-mail inválido.").transform((e) => e.toLowerCase()),
-    name: z.string().trim().max(80).optional(),
-    role: z.enum(["ADMIN", "MAINTAINER", "VIEWER"]),
-  }).safeParse({ email: form.get("email"), name: form.get("name") || undefined, role: form.get("role") });
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message };
-  if (parsed.data.role === "ADMIN" && actor.role !== "OWNER") return { ok: false, message: "Só um OWNER convida ADMIN." };
+    email: z.email("Informe um e-mail válido, como nome@empresa.com.").transform((e) => e.toLowerCase()),
+    name: z.string().trim().max(80, "Use até 80 caracteres no nome.").optional(),
+    role: z.enum(["ADMIN", "MAINTAINER", "VIEWER"], { error: "Escolha o papel da pessoa." }),
+  }).safeParse({ email: form.get("email") ?? "", name: form.get("name") || undefined, role: form.get("role") ?? undefined });
+  if (!parsed.success) {
+    const errors: NonNullable<InviteResult["errors"]> = {};
+    for (const issue of parsed.error.issues) {
+      const key = issue.path[0];
+      if ((key === "email" || key === "role") && !errors[key]) errors[key] = issue.message;
+    }
+    return { ok: false, errors, message: Object.keys(errors).length ? undefined : parsed.error.issues[0]?.message };
+  }
+  if (parsed.data.role === "ADMIN" && actor.role !== "OWNER") return { ok: false, errors: { role: `Só um ${ROLE_LABEL.OWNER} convida ${ROLE_LABEL.ADMIN}.` } };
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (existing?.status === "ACTIVE") return { ok: false, message: "Essa pessoa já tem acesso." };
+  if (existing?.status === "ACTIVE") return { ok: false, errors: { email: "Essa pessoa já tem acesso." } };
   const { url, expiresAt, sent, sendError } = await createInvite({ ...parsed.data, kind: "INVITE", createdById: actor.id });
   revalidatePath("/admin/people");
   const when = expiresAt.toLocaleDateString("pt-BR");
@@ -109,7 +127,7 @@ export async function passwordResetLink(_: InviteResult, form: FormData): Promis
   const userId = z.string().parse(form.get("userId"));
   const target = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
   if (!target.email || !target.passwordHash) return { ok: false, message: "Essa pessoa não entra com senha." };
-  if (target.role === "OWNER" && actor.role !== "OWNER") return { ok: false, message: "Só um OWNER redefine a senha de outro OWNER." };
+  if (target.role === "OWNER" && actor.role !== "OWNER") return { ok: false, message: `Só um ${ROLE_LABEL.OWNER} redefine a senha de outro ${ROLE_LABEL.OWNER}.` };
   const { url, sent, sendError } = await createInvite({ email: target.email, role: target.role, kind: "PASSWORD_RESET", createdById: actor.id });
   const message = sent
     ? "E-mail enviado. O link também está aqui: vale 1 hora, uso único. Ao usar, as sessões da pessoa são encerradas."

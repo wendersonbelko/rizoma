@@ -4,7 +4,7 @@ import "@fontsource/schibsted-grotesk/latin-500.css";
 import "@fontsource/schibsted-grotesk/latin-600.css";
 import "@fontsource/schibsted-grotesk/latin-700.css";
 import "@fontsource/jetbrains-mono/latin-400.css";
-import { paletteToCssVars } from "@api-hub/core/themes";
+import { themeStyleSheet } from "@api-hub/core";
 import { getTheme } from "@/lib/install";
 import "./globals.css";
 
@@ -17,16 +17,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const theme = await getTheme();
-  // RN-110: tema escolhido pelo admin vira variáveis CSS; o Tailwind lê --color-*.
+  // RN-110: o admin define só a marca (destaque); as paletas Claro e Escuro nascem dela e viram
+  // variáveis CSS (o Tailwind lê --color-*). Quem decide qual vale é o data-theme, que vem do
+  // cookie da pessoa (claro, escuro ou sistema), então a página já chega no tema certo, sem piscar.
   const style = {
-    ...paletteToCssVars(theme.palette),
-    "--color-field": theme.dark ? theme.palette.paper : "#ffffff",
     "--font-grotesk": "'Schibsted Grotesk'",
     "--font-code": "'JetBrains Mono'",
-    colorScheme: theme.dark ? "dark" : "light",
   } as React.CSSProperties;
   return (
-    <html lang="pt-BR" data-theme={theme.dark ? "dark" : "light"} style={style}>
+    <html lang="pt-BR" data-theme={theme.choice} style={style}>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: themeStyleSheet(theme.accent) }} />
+      </head>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

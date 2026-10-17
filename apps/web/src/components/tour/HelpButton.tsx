@@ -83,7 +83,7 @@ export function HelpButton() {
           ) : (
             <>
               <h2 className="font-semibold">Ajuda</h2>
-              <p className="mt-1 text-sm text-muted">Esta tela ainda não tem um tour guiado. Use o menu à esquerda para ver o tour das telas principais.</p>
+              <p className="mt-1 text-sm text-muted">Esta tela ainda não tem um tour guiado.</p>
             </>
           )}
         </div>

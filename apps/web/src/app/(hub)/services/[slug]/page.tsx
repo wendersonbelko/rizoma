@@ -1,11 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@api-hub/db";
-import { canManageService, canSeeService, diffSpecs, readChangeSummary, summarizeDiff } from "@api-hub/core";
+import { can, canManageService, canSeeService, diffSpecs, readChangeSummary, summarizeDiff } from "@api-hub/core";
 import { requirePermission } from "@/lib/guards";
 import { getEnvironments, getTheme } from "@/lib/install";
 import { EnvSwitch } from "@/components/env";
 import { Notice } from "@/components/ui";
 import { ServiceHeader } from "./service-header";
+import { ServiceChecklist } from "./service-checklist";
+import { loadChecklist } from "./query";
 import { ServiceTabsNav } from "./service-tabs-nav";
 import { CompareSelect } from "./compare-select";
 import { ApiTab } from "./tabs/api-tab";
@@ -54,6 +56,10 @@ export default async function ServicePage({ params, searchParams }: { params: Pr
   if (sp.tab && sp.tab !== tab) redirect(hrefFor({ tab }));
   if (sp.env && !envs.some((e) => e.slug === sp.env)) redirect(hrefFor({ env: env.slug }));
   const editable = canManageService(user, service);
+  // Achado M2 da auditoria de UX de 02/10/2026: o checklist de próximos passos é de quem gerencia o
+  // serviço e some quando não falta nada (ou quando o serviço está arquivado).
+  const checklist = editable && !service.archivedAt ? await loadChecklist(user, service) : null;
+  const draft = checklist !== null && checklist.pending > 0;
   const latest = await prisma.apiSpec.findFirst({
     where: { serviceId: service.id, environmentId: env.id, isLatest: true },
     select: { version: true, changeSummary: true },
@@ -69,7 +75,9 @@ export default async function ServicePage({ params, searchParams }: { params: Pr
 
   return (
     <div className="space-y-6">
-      <ServiceHeader service={service} editable={editable} />
+      <ServiceHeader service={service} editable={editable} draft={draft} canLink={can(user, "link:edit")} />
+
+      {draft && <ServiceChecklist checklist={checklist} />}
 
       <div data-tour="service-env" className="flex flex-wrap items-center justify-between gap-3 rounded-panel border border-line bg-sheet px-3 py-2">
         <EnvSwitch envs={envs} current={env.slug} hrefFor={(s) => hrefFor({ env: s, v: "", doc: sp.doc, compare: "" })} />
@@ -104,7 +112,7 @@ export default async function ServicePage({ params, searchParams }: { params: Pr
 
       <ServiceTabsNav active={tab} hrefFor={hrefFor} />
 
-      {tab === "api" && <ApiTab user={user} service={service} env={env} selectedVersionId={sp.v} dark={theme.dark} slug={slug} hrefFor={hrefFor} />}
+      {tab === "api" && <ApiTab user={user} service={service} env={env} selectedVersionId={sp.v} dark={theme.dark} hrefFor={hrefFor} />}
       {tab === "rules" && <DocsTab user={user} service={service} slug={slug} sp={sp} hrefFor={hrefFor} />}
       {tab === "integrations" && <IntegrationsTab user={user} service={service} env={env} envs={envs} params={sp} />}
       {tab === "variables" && <EnvVarsTab user={user} service={service} env={env} envs={envs} editingKey={sp.var} slug={slug} hrefFor={hrefFor} params={sp} />}

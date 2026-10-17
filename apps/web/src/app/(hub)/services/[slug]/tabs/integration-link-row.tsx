@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { RESOURCE_KIND_LABEL, RESOURCE_RELATION_LABEL } from "@api-hub/core";
 import { Markdown } from "@/components/markdown";
-import { CellTitle, RowActionButton, RowActions, Td, Tr } from "@/components/table";
+import { CellTitle, RowActions, Td, Tr } from "@/components/table";
 import { unlinkResource } from "../actions";
+import { UndoRemove } from "../forms/undo-remove";
 import type { ServiceResourceLink } from "./integrations-tab";
 
 /** Uma linha da tabela "Integrações externas" do serviço. */
@@ -29,7 +30,7 @@ export function IntegrationLinkRow({ link, envSlug, currentServiceId, canEdit }:
       <Td align="right">
         {canEdit && (
           <RowActions>
-            <form action={unlinkResource}><input type="hidden" name="id" value={link.id} /><RowActionButton tone="danger">Remover</RowActionButton></form>
+            <UndoRemove action={unlinkResource} id={link.id} removedLabel="Integração removida" />
           </RowActions>
         )}
       </Td>

@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { prisma, type Prisma } from "@api-hub/db";
-import { CHANNEL_PROTOCOL_LABEL, LINK_KIND_LABEL, SECONDARY_PAGE_SIZE, canManageService, paginate, readPageRequest } from "@api-hub/core";
+import { CHANNEL_PROTOCOL_LABEL, LINK_KIND_LABEL, SECONDARY_PAGE_SIZE, can, canManageService, paginate, readPageRequest } from "@api-hub/core";
 import type { CurrentUser } from "@/lib/guards";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
 import { CellTitle, DataTable, SrOnly, TBody, THead, Td, Th, Tr } from "@/components/table";
-import { Badge, Button, Section } from "@/components/ui";
+import { Badge, Button, LinkButton, Section } from "@/components/ui";
 import { FormModal } from "@/components/form-modal";
 import { ResourceLinkForm } from "../forms/resource-link-form";
 import { ChannelForm } from "../forms/channel-form";
 import { CallForm } from "../forms/call-form";
 import { linkPreset, removeChannel } from "../actions";
+import { UndoRemove } from "../forms/undo-remove";
 import { IntegrationLinkRow } from "./integration-link-row";
 import type { Search, ServiceDetail } from "../types";
 
@@ -62,7 +63,7 @@ export async function IntegrationsTab({ user, service, env, envs, params }: { us
           <span className="flex flex-wrap items-center gap-3">
             <span className="text-sm text-muted">{channels.length === 0 ? "Nenhum canal extra" : `${channels.length} ${channels.length === 1 ? "canal" : "canais"}`}</span>
             {canEdit && (
-              <FormModal label="Novo canal" title="Novo canal">
+              <FormModal label="Novo canal" title="Novo canal" size="md">
                 <ChannelForm serviceId={service.id} envs={envs} />
               </FormModal>
             )}
@@ -91,10 +92,7 @@ export async function IntegrationsTab({ user, service, env, envs, params }: { us
                       )}
                     </div>
                     {canEdit && (
-                      <form action={removeChannel}>
-                        <input type="hidden" name="id" value={c.id} />
-                        <Button tone="quiet" type="submit">Remover</Button>
-                      </form>
+                      <UndoRemove action={removeChannel} id={c.id} removedLabel="Canal removido" />
                     )}
                   </li>
                 ))}
@@ -104,7 +102,7 @@ export async function IntegrationsTab({ user, service, env, envs, params }: { us
 
       <Section
         title="Outros serviços do hub"
-        description="Dependências entre este serviço e os demais."
+        description="Vínculos entre este serviço e os demais."
         action={
           <span className="flex flex-wrap items-center gap-3">
             {canEdit && (
@@ -112,14 +110,16 @@ export async function IntegrationsTab({ user, service, env, envs, params }: { us
                 <CallForm serviceId={service.id} />
               </FormModal>
             )}
+            {/* Contrato com a tela de Vínculos: abre o modal "Novo vínculo" com este serviço no "De". */}
+            {canEdit && can(user, "link:edit") && <LinkButton href={`/admin/links?from=${service.id}&fromKind=service#new-link`} tone="quiet">Novo vínculo</LinkButton>}
             <Link href={`/graph?focus=s:${service.id}`} className="text-sm text-accent">Ver no mapa</Link>
           </span>
         }
       >
         {hubLinks.length === 0 ? (
-          <EmptyState title="Nenhuma ligação registrada" description="Vínculos entre serviços aparecem aqui — crie em Serviços e vínculos ou direto no Mapa de ligações." />
+          <EmptyState title="Nenhum vínculo registrado" description="Vínculos entre serviços aparecem aqui. Crie em Vínculos ou direto no Mapa de ligações." />
         ) : (
-          <DataTable caption="Ligações com outros serviços" minWidth={560} pagination={<Pagination info={hubPage.info} noun={["ligação", "ligações"]} params={params} {...HUB_KEYS} />}>
+          <DataTable caption="Vínculos com outros serviços" minWidth={560} pagination={<Pagination info={hubPage.info} noun={["vínculo", "vínculos"]} params={params} {...HUB_KEYS} />}>
             <THead>
               <Th>Direção</Th>
               <Th>Serviço</Th>
@@ -147,7 +147,7 @@ export async function IntegrationsTab({ user, service, env, envs, params }: { us
           <span className="flex flex-wrap items-center gap-2">
             <form action={linkPreset}><input type="hidden" name="serviceId" value={service.id} /><input type="hidden" name="preset" value="postgres" /><Button type="submit" tone="quiet">PostgreSQL</Button></form>
             <form action={linkPreset}><input type="hidden" name="serviceId" value={service.id} /><input type="hidden" name="preset" value="rabbit" /><Button type="submit" tone="quiet">RabbitMQ</Button></form>
-            <FormModal label="Ligar integração" title="Ligar integração externa" tone="primary">
+            <FormModal label="Ligar integração" title="Ligar integração externa" tone="primary" size="md">
               <ResourceLinkForm serviceId={service.id} resources={allResources} />
             </FormModal>
           </span>

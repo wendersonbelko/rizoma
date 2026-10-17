@@ -1,43 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { SOURCE_META, SOURCE_PROVIDERS, type SourceProvider } from "@api-hub/core/sources";
 import { SourceFields, sourcesPayload, type SourceDraft } from "@/components/config-editors";
-import { FormModal, useCloseOnSuccess } from "@/components/form-modal";
+import { FormModal, ModalActions, useCloseOnSuccess } from "@/components/form-modal";
 import { Badge, Button } from "@/components/ui";
-import { CellTitle, DataTable, RowActionButton, RowActions, SrOnly, TBody, THead, Td, Th, Tr } from "@/components/table";
+import { CellTitle, DataTable, RowActions, SrOnly, TBody, THead, Td, Th, Tr } from "@/components/table";
 import { generateSyncToken, generateWebhookSecret, saveRepositories } from "./actions";
-import { Msg } from "./form-primitives";
+import { ConfirmOff, Msg } from "./form-primitives";
 import type { SettingsResult } from "./actions";
 
 type SourceRow = SourceDraft & { hasWebhookSecret?: boolean };
 
-export function RepositorySettings({ sources, webhookUrl, hasSyncToken }: {
+/**
+ * A lista vem da página (servidor) e é a única fonte: toda ação salva e revalida, então `sources` já chega atualizada.
+ * Webhook e sincronização agendada começam pelo para quê e deixam o jargão (URL, Bearer, cron) em "Avançado" (achado V5).
+ */
+export function RepositorySettings({ sources: value, webhookUrl, hasSyncToken }: {
   sources: SourceRow[];
   webhookUrl: string;
   hasSyncToken: boolean;
 }) {
-  const [value, setValue] = useState(sources);
   const [notice, setNotice] = useState<SettingsResult | null>(null);
-  const [rowError, setRowError] = useState<{ type: string; message: string } | null>(null);
-  const [pendingOff, setPendingOff] = useState<string | null>(null);
   const linked = value.filter((s) => s.type !== "GENERIC");
 
-  const stored = (list: SourceRow[]) => list.map((s) => ({ ...s, token: "", hasToken: s.hasToken || !!s.token.trim() }));
-
-  const turnOff = async (type: SourceProvider) => {
-    setPendingOff(type);
-    setRowError(null);
-    const next = value.filter((s) => s.type !== type);
-    const result = await saveRepositories(sourcesPayload(next));
-    setPendingOff(null);
-    if (result.ok) {
-      setValue(stored(next));
-      setNotice(result);
-    } else {
-      setNotice(null);
-      setRowError({ type, message: result.message ?? "Não foi possível desligar." });
-    }
+  const turnOff = async (type: SourceProvider): Promise<SettingsResult> => {
+    const result = await saveRepositories(sourcesPayload(value.filter((s) => s.type !== type)));
+    if (result.ok) setNotice(result);
+    return result;
   };
 
   return (
@@ -56,55 +46,67 @@ export function RepositorySettings({ sources, webhookUrl, hasSyncToken }: {
               type={type}
               current={value.find((s) => s.type === type)}
               list={value}
-              error={rowError?.type === type ? rowError.message : undefined}
-              pendingOff={pendingOff !== null}
-              turningOff={pendingOff === type}
               onOff={() => turnOff(type)}
-              onSaved={(next, message) => { setValue(stored(next)); setRowError(null); setNotice(message ? { ok: true, message } : null); }}
+              onSaved={(message) => setNotice(message ? { ok: true, message } : null)}
             />
           ))}
         </TBody>
       </DataTable>
 
       <section className="space-y-3 rounded-panel border border-line bg-sheet p-5">
-        <h2 className="font-semibold tracking-tight">Webhook de push</h2>
-        <CopyLine value={webhookUrl} empty="Defina o endereço público em E-mail para montar a URL." />
+        <h3 className="font-semibold tracking-tight">Atualizar a spec quando alguém faz push</h3>
+        <p className="text-sm text-muted">Quando o código muda no repositório, o provedor avisa o hub e a spec é lida de novo, sem esperar ninguém sincronizar.</p>
         {linked.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {linked.map((s) => (
-              <FormModal key={s.type} label={s.hasWebhookSecret ? `Gerar outro segredo · ${SOURCE_META[s.type].label}` : `Gerar segredo · ${SOURCE_META[s.type].label}`} title={`Segredo do webhook · ${SOURCE_META[s.type].label}`} tone="quiet">
-                <RevealOnce label={s.hasWebhookSecret ? "Gerar outro segredo" : "Gerar segredo"} action={() => generateWebhookSecret(s.type)} />
-              </FormModal>
-            ))}
-          </div>
+          <details className="rounded-control border border-line bg-paper/60 px-3 py-2">
+            <summary className="cursor-pointer text-sm font-medium">Avançado: endereço e segredo do webhook</summary>
+            <div className="mt-3 space-y-3">
+              <p className="text-sm text-muted">Cadastre este endereço como webhook de push no provedor e cole o segredo gerado abaixo.</p>
+              <CopyLine value={webhookUrl} empty="Preencha o Endereço público do hub em E-mail, nesta página, para montar o endereço." />
+              <div className="flex flex-wrap gap-2">
+                {linked.map((s) => (
+                  <FormModal
+                    key={s.type}
+                    label={s.hasWebhookSecret ? `Gerar outro segredo · ${SOURCE_META[s.type].label}` : `Gerar segredo · ${SOURCE_META[s.type].label}`}
+                    title={`Segredo do webhook · ${SOURCE_META[s.type].label}`}
+                    tone="quiet"
+                  >
+                    <RevealOnce label={s.hasWebhookSecret ? "Gerar outro segredo" : "Gerar segredo"} replaces={!!s.hasWebhookSecret} action={() => generateWebhookSecret(s.type)} />
+                  </FormModal>
+                ))}
+              </div>
+            </div>
+          </details>
         ) : (
-          <p className="text-sm text-muted">Ligue GitHub, GitLab ou Bitbucket para gerar o segredo.</p>
+          <p className="text-sm text-muted">Ligue GitHub, GitLab ou Bitbucket acima para ativar.</p>
         )}
       </section>
 
       <section className="space-y-3 rounded-panel border border-line bg-sheet p-5">
-        <h2 className="font-semibold tracking-tight">Sincronização agendada</h2>
-        <p className="text-sm text-muted">
-          O cron chama <code className="font-mono text-ink">POST /api/v1/sync</code> com <code className="font-mono text-ink">Authorization: Bearer</code>.
-          {hasSyncToken ? " Já existe um token. Gerar outro invalida o anterior." : " Ainda não há token."}
-        </p>
-        <FormModal label={hasSyncToken ? "Gerar outro token" : "Gerar token"} title="Token de sincronização" tone="quiet">
-          <RevealOnce label={hasSyncToken ? "Gerar outro token" : "Gerar token"} action={() => generateSyncToken()} />
-        </FormModal>
+        <h3 className="font-semibold tracking-tight">Sincronização agendada</h3>
+        <p className="text-sm text-muted">Para ler as specs dos repositórios em horários fixos, um agendador da sua infraestrutura (cron) pede ao hub que sincronize.</p>
+        <details className="rounded-control border border-line bg-paper/60 px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium">Avançado: chamada e token</summary>
+          <div className="mt-3 space-y-3">
+            <p className="text-sm text-muted">
+              O agendador chama <code className="font-mono text-ink">POST /api/v1/sync</code> com o cabeçalho <code className="font-mono text-ink">Authorization: Bearer</code> e o token abaixo.
+              {hasSyncToken ? " Já existe um token. Gerar outro invalida o anterior." : " Ainda não há token."}
+            </p>
+            <FormModal label={hasSyncToken ? "Gerar outro token" : "Gerar token"} title="Token de sincronização" tone="quiet">
+              <RevealOnce label={hasSyncToken ? "Gerar outro token" : "Gerar token"} replaces={hasSyncToken} action={() => generateSyncToken()} />
+            </FormModal>
+          </div>
+        </details>
       </section>
     </div>
   );
 }
 
-function SourceTableRow({ type, current, list, error, pendingOff, turningOff, onOff, onSaved }: {
+function SourceTableRow({ type, current, list, onOff, onSaved }: {
   type: SourceProvider;
   current?: SourceRow;
   list: SourceRow[];
-  error?: string;
-  pendingOff: boolean;
-  turningOff: boolean;
-  onOff: () => void;
-  onSaved: (next: SourceRow[], message?: string) => void;
+  onOff: () => Promise<SettingsResult>;
+  onSaved: (message?: string) => void;
 }) {
   const [session, setSession] = useState(0);
   const meta = SOURCE_META[type];
@@ -112,7 +114,6 @@ function SourceTableRow({ type, current, list, error, pendingOff, turningOff, on
     <Tr>
       <Td>
         <CellTitle title={meta.label} meta={type === "GENERIC" ? "Specs por URL, CI ou importação manual." : undefined} />
-        {error && <p className="mt-1 text-sm text-danger">{error}</p>}
       </Td>
       <Td><Badge tone={current ? "accent" : "neutral"}>{current ? "Ligado" : "Desligado"}</Badge></Td>
       <Td align="right">
@@ -121,9 +122,13 @@ function SourceTableRow({ type, current, list, error, pendingOff, turningOff, on
             <SourceDialog key={session} type={type} current={current} list={list} onSaved={onSaved} />
           </FormModal>
           {current && (
-            <RowActionButton type="button" tone="danger" disabled={pendingOff} onClick={onOff}>
-              {turningOff ? "Desligando…" : "Desligar"}
-            </RowActionButton>
+            <ConfirmOff
+              label="Desligar"
+              title={`Desligar ${meta.label}`}
+              description="O hub deixa de ler specs direto desse provedor e o token guardado é apagado. As specs que já estão no catálogo continuam."
+              actionLabel="Desligar origem"
+              run={onOff}
+            />
           )}
         </RowActions>
       </Td>
@@ -135,7 +140,7 @@ function SourceDialog({ type, current, list, onSaved }: {
   type: SourceProvider;
   current?: SourceRow;
   list: SourceRow[];
-  onSaved: (next: SourceRow[], message?: string) => void;
+  onSaved: (message?: string) => void;
 }) {
   const [draft, setDraft] = useState<SourceRow>(current ?? { type, baseUrl: "", token: "" });
   const [state, setState] = useState<SettingsResult>({ ok: false });
@@ -148,45 +153,76 @@ function SourceDialog({ type, current, list, onSaved }: {
     const result = await saveRepositories(sourcesPayload(next));
     setState(result);
     setPending(false);
-    if (result.ok) onSaved(next, result.message);
+    if (result.ok) onSaved(result.message);
   };
 
   return (
-    <div className="space-y-5">
+    <form onSubmit={(e) => { e.preventDefault(); void save(); }} className="space-y-5">
       <SourceFields draft={draft} onChange={(patch) => { setDraft({ ...draft, ...patch }); setState({ ok: false }); }} />
-      <div className="flex flex-wrap items-center gap-4">
-        <Button disabled={pending} onClick={save}>{pending ? "Salvando…" : "Salvar"}</Button>
-        <Msg state={state} />
-      </div>
-    </div>
+      <ModalActions message={!state.ok && state.message ? <span className="text-danger">{state.message}</span> : undefined}>
+        <Button disabled={pending}>{pending ? "Salvando…" : current ? "Salvar alterações" : "Ligar origem"}</Button>
+      </ModalActions>
+    </form>
   );
 }
 
 function CopyLine({ value, empty }: { value: string; empty: string }) {
-  const [copied, setCopied] = useState(false);
   return (
     <div className="flex flex-wrap items-center gap-2">
       <code className="min-w-0 flex-1 truncate rounded-control border border-line bg-field px-3 py-2 font-mono text-[13px]">{value || empty}</code>
-      {value && (
-        <Button type="button" tone="quiet" onClick={async () => { await navigator.clipboard.writeText(value); setCopied(true); }}>
-          {copied ? "Copiado" : "Copiar"}
-        </Button>
-      )}
+      {value && <CopyButton value={value} />}
     </div>
   );
 }
 
-/** O segredo aparece uma vez e o modal fica aberto para copiar. */
-function RevealOnce({ label, action }: { label: string; action: () => Promise<SettingsResult> }) {
-  const [state, setState] = useState<SettingsResult | null>(null);
-  const [pending, setPending] = useState(false);
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted">Cole o valor no provedor agora. Ele não aparece de novo.</p>
-      <Button disabled={pending || !!state?.ok} onClick={async () => { setPending(true); setState(await action()); setPending(false); }}>
-        {pending ? "Gerando…" : label}
-      </Button>
-      {state?.message && <p role="status" className={`break-all text-sm ${state.ok ? "font-mono text-ink" : "text-danger"}`}>{state.message}</p>}
-    </div>
+    <Button
+      type="button"
+      tone="quiet"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+        } catch {
+          // Sem permissão para a área de transferência (ex.: página em http): a pessoa seleciona e copia à mão.
+        }
+      }}
+    >
+      {copied ? "Copiado" : "Copiar"}
+    </Button>
+  );
+}
+
+/**
+ * O valor gerado aparece uma vez e o modal fica aberto, com botão Copiar, para a pessoa levar para o provedor.
+ * Gerar de novo invalida o anterior, então o aviso vem antes do botão.
+ */
+function RevealOnce({ label: labelNow, replaces: replacesNow, action }: { label: string; replaces: boolean; action: () => Promise<SettingsResult> }) {
+  // Depois de gerar, a página recarrega e o rótulo mudaria para "Gerar outro" com o valor ainda na tela: guarda o de antes.
+  const [{ label, replaces }] = useState({ label: labelNow, replaces: replacesNow });
+  const [state, setState] = useState<SettingsResult | null>(null);
+  const [pending, start] = useTransition();
+  const revealed = state?.ok && state.secret;
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); start(async () => setState(await action())); }} className="space-y-4">
+      <p className="text-sm text-muted">
+        Cole o valor no provedor agora: ele não aparece de novo.
+        {replaces && " O valor de antes deixa de funcionar."}
+      </p>
+      {revealed && (
+        <div className="space-y-2">
+          <code className="block break-all rounded-control border border-line bg-field px-3 py-2 font-mono text-[13px]">{state.secret}</code>
+          <CopyButton value={state.secret!} />
+        </div>
+      )}
+      <ModalActions
+        cancelLabel={revealed ? "Fechar" : "Cancelar"}
+        message={state?.message ? <span className={state.ok ? "text-accent" : "text-danger"}>{state.message}</span> : undefined}
+      >
+        <Button disabled={pending || !!state?.ok}>{pending ? "Gerando…" : label}</Button>
+      </ModalActions>
+    </form>
   );
 }

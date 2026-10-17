@@ -3,9 +3,9 @@
 import { useState } from "react";
 import dagre from "@dagrejs/dagre";
 import type { GraphEdge, GraphNode, NodeKind } from "@api-hub/core/graph";
-import { CHANNEL_PROTOCOL_LABEL, RESOURCE_KIND_LABEL, SERVICE_KIND_LABEL, type ResourceKind, type ServiceKind } from "@api-hub/core/types";
+import { RESOURCE_KIND_LABEL, SERVICE_KIND_LABEL, type ResourceKind, type ServiceKind } from "@api-hub/core/types";
 import { Button } from "@/components/ui";
-import { EDGE_LABEL, KIND } from "./constants";
+import { edgeRelationLabel, KIND } from "./constants";
 import { recordGraphPrint } from "./print-actions";
 
 const NW = 250;
@@ -19,12 +19,6 @@ function color(name: string, fallback: string) {
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
-}
-
-function edgeText(e: GraphEdge) {
-  const named: Record<string, string> = { ...EDGE_LABEL, OWNS: "é do time", MEMBER: "membro", SOURCE: "código" };
-  const base = named[e.kind] ?? e.label;
-  return e.protocol ? `${base} via ${CHANNEL_PROTOCOL_LABEL[e.protocol]}` : base;
 }
 
 function subtitle(n: GraphNode) {
@@ -45,6 +39,7 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, max: number) {
   return `${cut}…`;
 }
 
+/** `depth` é o alcance em graus (1 ou 2); sem ele o print leva o mapa todo ("Tudo"). */
 export type PrintFilters = { kinds: NodeKind[]; serviceKinds: ServiceKind[]; focusLabel?: string; depth?: number };
 export type PrintStamp = { id: string; who: string; at: string; orgName: string; appName: string };
 
@@ -108,7 +103,7 @@ function downloadGraphPrint(nodes: GraphNode[], edges: GraphEdge[], filters: Pri
   ctx.fillText(`Filtros: ${activeKinds.length ? activeKinds.join(", ") : "nenhum tipo"}`, pad, 184);
   ctx.fillText(`Sistemas: ${activeSystems.length ? activeSystems.join(", ") : "nenhum"}`, pad, 206);
   if (filters?.focusLabel) {
-    ctx.fillText(`Foco: ${filters.focusLabel}${filters.depth ? ` · vizinhança ${filters.depth}` : ""}`, pad, 228);
+    ctx.fillText(`Foco: ${filters.focusLabel} · ${filters.depth ? `${filters.depth}º grau` : "tudo"}`, pad, 228);
   }
 
   const kinds = [...new Set(nodes.map((n) => n.kind))];
@@ -164,7 +159,7 @@ function downloadGraphPrint(nodes: GraphNode[], edges: GraphEdge[], filters: Pri
     ctx.lineTo(x2 - 10, y2 + 5);
     ctx.stroke();
 
-    const label = edgeText(e);
+    const label = edgeRelationLabel(e);
     ctx.font = "600 12px 'Schibsted Grotesk', sans-serif";
     const tw = ctx.measureText(label).width;
     const baseX = (x1 + x2) / 2 - (tw + 16) / 2;
@@ -224,7 +219,7 @@ function downloadGraphPrint(nodes: GraphNode[], edges: GraphEdge[], filters: Pri
   a.click();
 }
 
-/** Câmera abaixo do botão de novo vínculo: confirma e baixa o cartaz das ligações visíveis. */
+/** Câmera abaixo do botão de novo vínculo: confirma e baixa o cartaz das ligações em foco (as nítidas na tela). */
 export function PrintGraphButton({ nodes, edges, filters }: { nodes: GraphNode[]; edges: GraphEdge[]; filters: PrintFilters }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -236,7 +231,7 @@ export function PrintGraphButton({ nodes, edges, filters }: { nodes: GraphNode[]
       const stamp = await recordGraphPrint({
         filters,
         nodes: nodes.map((n) => ({ id: n.id, kind: n.kind, label: n.label, sub: n.sub })),
-        edges: edges.map((e) => ({ id: e.id, from: e.source, to: e.target, relation: edgeText(e) })),
+        edges: edges.map((e) => ({ id: e.id, from: e.source, to: e.target, relation: edgeRelationLabel(e) })),
       });
       downloadGraphPrint(nodes, edges, filters, stamp);
       setOpen(false);
@@ -262,16 +257,16 @@ export function PrintGraphButton({ nodes, edges, filters }: { nodes: GraphNode[]
         </svg>
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 px-4" role="presentation" onMouseDown={() => setOpen(false)}>
+        <div className="fixed inset-0 z-50 grid place-items-center bg-overlay px-4" role="presentation" onMouseDown={() => setOpen(false)}>
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="print-graph-title"
-            className="w-full max-w-sm rounded-panel border border-line bg-sheet p-6"
+            className="w-full max-w-sm rounded-panel border border-line bg-raised p-6"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <h2 id="print-graph-title" className="text-lg font-semibold tracking-tight">Tem certeza que deseja tirar um print?</h2>
-            <p className="mt-2 text-sm text-muted">A imagem usa as ligações que estão na tela agora, com nome, tipo e o sentido de cada seta.</p>
+            <p className="mt-2 text-sm text-muted">A imagem usa as ligações em foco (as que estão nítidas na tela agora), com nome, tipo e o sentido de cada seta.</p>
             <div className="mt-5 flex justify-end gap-2">
               <Button type="button" tone="quiet" disabled={pending} onClick={() => setOpen(false)}>Não</Button>
               <Button type="button" disabled={pending} onClick={() => { void confirm(); }}>{pending ? "Registrando…" : "Sim"}</Button>

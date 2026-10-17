@@ -13,8 +13,16 @@ import { syncService } from "@/lib/sources";
 import { publishHubFile } from "@/lib/hub-manifest";
 import { publishServiceDoc, resolveRepoConflict, syncRepository } from "@/lib/repo-sync";
 
-export type Result = { ok: boolean; message?: string; value?: string };
+/** `keepOpen`: deu certo, mas nada mudou na lista; o modal fica aberto para a pessoa ler o aviso. */
+export type Result = { ok: boolean; message?: string; value?: string; keepOpen?: boolean };
 const fail = (message: string): Result => ({ ok: false, message });
+
+/**
+ * Select obrigatório com placeholder (achado M3 da auditoria de UX de 02/10/2026): enquanto a pessoa não
+ * escolhe, o navegador não envia o campo e `formData.get()` vem `null`. O Zod aceita a ausência e responde
+ * com a instrução de como corrigir, em vez do "expected string" padrão.
+ */
+const choose = (message: string) => z.string({ error: message }).min(1, message);
 
 async function serviceFor(actor: CurrentUser, serviceId: string, perm: Permission) {
   const svc = await prisma.service.findUnique({ where: { id: serviceId } });
@@ -83,8 +91,10 @@ export async function revealEnvVar(id: string): Promise<Result> {
 /** RN-87: copiar chaves de um ambiente para outro; segredos vão vazios, valores existentes não são sobrescritos. */
 export async function copyEnvVars(_: Result, form: FormData): Promise<Result> {
   const actor = await requirePermission("envvars:edit");
-  const { serviceId, fromEnvId, toEnvId } = z.object({ serviceId: z.string(), fromEnvId: z.string(), toEnvId: z.string() }).parse(Object.fromEntries(form));
-  if (fromEnvId === toEnvId) return fail("Escolha ambientes diferentes.");
+  const parsed = z.object({ serviceId: z.string(), fromEnvId: choose("Escolha o ambiente de onde copiar."), toEnvId: z.string() }).safeParse(Object.fromEntries(form));
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Dados inválidos.");
+  const { serviceId, fromEnvId, toEnvId } = parsed.data;
+  if (fromEnvId === toEnvId) return fail("Escolha um ambiente diferente do que recebe as chaves.");
   const svc = await serviceFor(actor, serviceId, "envvars:edit");
   const [source, target] = await Promise.all([
     prisma.serviceEnvVar.findMany({ where: { serviceId, environmentId: fromEnvId } }),
@@ -100,7 +110,8 @@ export async function copyEnvVars(_: Result, form: FormData): Promise<Result> {
   });
   await audit({ actorId: actor.id, action: "envvar.copied", targetType: "service", targetId: serviceId, metadata: { count: toCreate.length, fromEnvId, toEnvId } });
   revalidatePath(`/services/${svc.slug}`);
-  return { ok: true, message: toCreate.length ? `${countLabel(toCreate.length, "variável copiada", "variáveis copiadas")}. Preencha os segredos no ambiente de destino.` : "Nada para copiar: todas as chaves já existem." };
+  if (!toCreate.length) return { ok: true, keepOpen: true, message: "Nada para copiar: todas as chaves já existem." };
+  return { ok: true, message: `${countLabel(toCreate.length, "variável copiada", "variáveis copiadas")}. Preencha os segredos no ambiente de destino.` };
 }
 
 // ─── Regras de negócio em Markdown (RN-75 a RN-78) ──────────────────────
@@ -130,28 +141,39 @@ export async function saveDoc(_: Result, form: FormData): Promise<Result> {
   return { ok: true, message: note ? `Documento salvo. ${note}` : "Documento salvo.", value: slug };
 }
 
-export async function deleteDoc(form: FormData) {
+/**
+ * Excluir uma página de regras é irreversível (o texto foi escrito à mão): a tela pede o título
+ * (DangerAction com confirmText) e o servidor confere de novo, porque a tela sozinha não autoriza nada.
+ */
+export async function deleteDoc(form: FormData): Promise<Result> {
   const actor = await requirePermission("docs:edit");
   const id = z.string().parse(form.get("id"));
   const doc = await prisma.serviceDoc.findUniqueOrThrow({ where: { id } });
   const svc = await serviceFor(actor, doc.serviceId, "docs:edit");
+  if (String(form.get("confirm") ?? "") !== doc.title) return fail("Digite o título da página exatamente como está para confirmar.");
   await prisma.serviceDoc.delete({ where: { id } });
   await audit({ actorId: actor.id, action: "doc.deleted", targetType: "service", targetId: svc.id, metadata: { doc: doc.slug } });
   await publishServiceDoc(svc.id, actor.id, doc.slug, null);
   revalidatePath(`/services/${svc.slug}`);
+  return { ok: true };
 }
 
 // ─── Integrações externas (RN-80, RN-81) ────────────────────────────────
 
+const linkResourceSchema = serviceResourceSchema.extend({
+  resourceId: choose("Escolha a integração."),
+  relation: z.enum(serviceResourceSchema.shape.relation.options, { error: "Escolha como este serviço usa a integração." }),
+});
+
 export async function linkResource(_: Result, form: FormData): Promise<Result> {
   const actor = await requirePermission("service:edit");
-  const parsed = serviceResourceSchema.safeParse({ ...Object.fromEntries(form), note: form.get("note") || undefined });
+  const parsed = linkResourceSchema.safeParse({ ...Object.fromEntries(form), note: form.get("note") || undefined });
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Dados inválidos.");
   const svc = await serviceFor(actor, parsed.data.serviceId, "service:edit");
   try {
     await prisma.serviceResource.create({ data: { ...parsed.data, createdById: actor.id } });
   } catch (e) {
-    if ((e as { code?: string }).code === "P2002") return fail("Essa ligação já existe.");
+    if ((e as { code?: string }).code === "P2002") return fail("Essa integração já está ligada a este serviço com essa relação.");
     throw e;
   }
   await audit({ actorId: actor.id, action: "integration.linked", targetType: "service", targetId: svc.id, metadata: { resourceId: parsed.data.resourceId, relation: parsed.data.relation } });
@@ -190,7 +212,9 @@ export async function uploadSpec(_: Result, form: FormData): Promise<Result> {
     const env = await prisma.environment.findUniqueOrThrow({ where: { id: environmentId } });
     await audit({ actorId: actor.id, action: "spec.uploaded", targetType: "service", targetId: serviceId, metadata: { env: env.slug, version: r.version, status: r.status } });
     revalidatePath(`/services/${svc.slug}`);
-    return { ok: true, message: r.status === "unchanged" ? `Essa spec já existia (v${r.version}).` : `Versão ${r.version} publicada em ${env.name}.` };
+    return r.status === "unchanged"
+      ? { ok: true, keepOpen: true, message: `Essa spec já existia (v${r.version}). Nada foi publicado.` }
+      : { ok: true, message: `Versão ${r.version} publicada em ${env.name}.` };
   } catch (e) {
     return fail(e instanceof SpecError ? e.message : "Spec inválida.");
   }
@@ -227,8 +251,8 @@ export async function syncNow(_: Result, form: FormData): Promise<Result> {
 
 const channelSchema = z.object({
   serviceId: z.string(),
-  protocol: z.enum(CHANNEL_PROTOCOLS),
-  name: z.string().trim().min(1).max(80),
+  protocol: z.enum(CHANNEL_PROTOCOLS, { error: "Escolha o protocolo do canal." }),
+  name: z.string({ error: "Dê um nome ao canal." }).trim().min(1, "Dê um nome ao canal.").max(80, "Nome muito longo (máx. 80)."),
   environmentId: z.string().optional(),
   address: z.string().trim().max(500).optional(),
 });
@@ -239,6 +263,8 @@ export async function addChannel(_: Result, form: FormData): Promise<Result> {
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Canal inválido.");
   const svc = await serviceFor(actor, parsed.data.serviceId, "service:edit");
   if (parsed.data.address && /:\/\/[^/\s]*:[^@\s]+@/.test(parsed.data.address)) return fail("O endereço não pode carregar senha.");
+  // Endereço sem ambiente seria descartado em silêncio: melhor dizer o que falta.
+  if (parsed.data.address && !parsed.data.environmentId) return fail("Escolha em qual ambiente fica esse endereço.");
   const channel = await prisma.serviceChannel.upsert({
     where: { serviceId_protocol_name: { serviceId: svc.id, protocol: parsed.data.protocol, name: parsed.data.name } },
     create: { serviceId: svc.id, protocol: parsed.data.protocol, name: parsed.data.name },
@@ -298,14 +324,16 @@ export async function addCall(_: Result, form: FormData): Promise<Result> {
   const actor = await requirePermission("service:edit");
   const parsed = z.object({
     serviceId: z.string(),
-    toSlug: z.string().trim().toLowerCase(),
-    method: z.string().trim().toUpperCase().min(1).max(10),
-    path: z.string().trim().min(1).max(500),
+    toSlug: z.string({ error: "Informe o serviço que recebe a chamada." }).trim().toLowerCase().min(1, "Informe o serviço que recebe a chamada."),
+    method: z.string({ error: "Escolha o método HTTP." }).trim().toUpperCase().min(1, "Escolha o método HTTP.").max(10),
+    path: z.string({ error: "Informe o caminho do endpoint." }).trim().min(1, "Informe o caminho do endpoint, como /pedidos.").max(500)
+      .startsWith("/", "O caminho começa com /, como /pedidos."),
   }).safeParse(Object.fromEntries(form));
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Chamada inválida.");
   const svc = await serviceFor(actor, parsed.data.serviceId, "service:edit");
   const target = await prisma.service.findUnique({ where: { slug: parsed.data.toSlug }, select: { id: true } });
-  if (!target || target.id === svc.id) return fail("Serviço de destino não encontrado.");
+  if (!target) return fail(`Não achei o serviço "${parsed.data.toSlug}". Use o endereço dele, como em /services/pedidos.`);
+  if (target.id === svc.id) return fail("Um serviço não registra chamada para si mesmo. Escolha outro serviço.");
   await prisma.serviceDependency.upsert({
     where: { fromServiceId_toServiceId_kind: { fromServiceId: svc.id, toServiceId: target.id, kind: "CONSUMES" } },
     create: { fromServiceId: svc.id, toServiceId: target.id, kind: "CONSUMES", protocol: "HTTP", createdById: actor.id },
@@ -320,4 +348,3 @@ export async function addCall(_: Result, form: FormData): Promise<Result> {
   revalidatePath(`/services/${svc.slug}`);
   return { ok: true, message: `Chamada registrada. ${hub.note}` };
 }
-

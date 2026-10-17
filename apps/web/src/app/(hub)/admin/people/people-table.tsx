@@ -4,6 +4,7 @@ import { PersonRow } from "./person-row";
 
 type Person = Parameters<typeof PersonRow>[0]["person"];
 
+/** Tabela de pessoas. Cabeçalho fixo na rolagem da página, sem barra interna (achado D5 da auditoria de UX de 02/10/2026). */
 export function PeopleTable({ people, actorId, hrefFor, pagination }: {
   people: Person[]; actorId: string; hrefFor: (id: string) => string; pagination?: ReactNode;
 }) {

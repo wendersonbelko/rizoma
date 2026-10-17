@@ -92,7 +92,7 @@ export function ApiBrowser({ outline, spec, dark, versions, selectedVersionId, e
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar path ou resumo"
             aria-label="Buscar endpoint"
-            className="mt-3 h-10 w-full rounded-control border border-line bg-paper px-3 text-sm outline-none transition placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/15"
+            className="mt-3 h-10 w-full rounded-control border border-line-strong bg-paper px-3 text-sm outline-none transition placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/15"
           />
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">

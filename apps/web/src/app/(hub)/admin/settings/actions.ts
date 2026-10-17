@@ -6,14 +6,15 @@ import { z } from "zod";
 import { randomBytes } from "node:crypto";
 import { requirePermission } from "@/lib/guards";
 import { audit } from "@/lib/audit";
-import { saveEnvironments, saveProviders, saveSources } from "@/lib/config-service";
+import { environmentsForScreen, saveEnvironments, saveProviders, saveSources } from "@/lib/config-service";
 import { clearMailSettings, probeMail, saveMailSettings } from "@/lib/mail";
 
-export type SettingsResult = { ok: boolean; message?: string };
+/** `secret` só vem quando a ação gera um valor que aparece uma vez (segredo do webhook, token do cron). */
+export type SettingsResult = { ok: boolean; message?: string; secret?: string };
 const fail = (message: string): SettingsResult => ({ ok: false, message });
-const done = (message: string): SettingsResult => {
+const done = (message: string, secret?: string): SettingsResult => {
   revalidatePath("/admin/settings");
-  return { ok: true, message };
+  return { ok: true, message, ...(secret ? { secret } : {}) };
 };
 
 /** Força revalidação do vínculo no próximo acesso de cada pessoa (RN-75). */
@@ -23,7 +24,7 @@ async function forceMembershipRecheck() {
 
 const orgSchema = setupSchemas.organization.omit({ orgSlug: true, appName: true });
 
-export async function saveOrganization(_: SettingsResult, form: FormData): Promise<SettingsResult> {
+export async function saveOrganization(form: FormData): Promise<SettingsResult> {
   const actor = await requirePermission("settings:manage");
   const split = (k: string) => String(form.get(k) ?? "").split(/[\s,]+/).filter(Boolean);
   const parsed = orgSchema.safeParse({ orgName: form.get("orgName"), allowedGithubOrgs: split("orgs"), allowedEmailDomains: split("domains") });
@@ -34,7 +35,7 @@ export async function saveOrganization(_: SettingsResult, form: FormData): Promi
   const changed = JSON.stringify([before.allowedGithubOrgs, before.allowedEmailDomains]) !== JSON.stringify([data.allowedGithubOrgs, data.allowedEmailDomains]);
   if (changed) await forceMembershipRecheck();
   await audit({ actorId: actor.id, action: "settings.organization", metadata: { orgs: data.allowedGithubOrgs, domains: data.allowedEmailDomains } });
-  return done(changed ? "Salvo. O vínculo de todos será conferido de novo no próximo acesso." : "Salvo.");
+  return done(changed ? "Salvo. Quem já tem conta será conferido de novo no próximo acesso." : "Salvo.");
 }
 
 /** RN-100 a RN-102: formas de login. Sempre sobra pelo menos uma forma que o próprio admin usa. */
@@ -73,7 +74,31 @@ export async function saveEnvs(payload: unknown): Promise<SettingsResult> {
   return done("Ambientes salvos. Novas publicações do CI já usam as regras de branch.");
 }
 
-export async function savePolicies(_: SettingsResult, form: FormData): Promise<SettingsResult> {
+/**
+ * Remove um ambiente (RN-92/93: só se não tiver specs nem variáveis; `saveEnvironments` confere).
+ * Achado F3 da auditoria de UX de 02/10/2026: é irreversível, então a pessoa digita o nome do ambiente.
+ * O nome é conferido aqui, contra o ambiente carregado do banco, e não contra o que veio do formulário.
+ */
+export async function removeEnvironment(form: FormData): Promise<SettingsResult> {
+  const actor = await requirePermission("settings:manage");
+  const slug = z.string().trim().min(1).max(40).parse(form.get("slug"));
+  const current = await environmentsForScreen();
+  const target = current.find((e) => e.slug === slug);
+  if (!target) return fail("Esse ambiente já não existe.");
+  if (current.length <= 1) return fail("Crie outro ambiente antes de remover o último.");
+  if (String(form.get("confirm") ?? "").trim() !== target.name) return fail(`Digite ${target.name} para confirmar.`);
+
+  const rest = current.filter((e) => e.slug !== slug).map((e) => ({ ...e, syncBranch: e.syncBranch || undefined }));
+  const parsed = environmentsInputSchema.safeParse(rest);
+  if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Dados inválidos.");
+  const r = await saveEnvironments(parsed.data);
+  if (!r.ok) return fail(r.error);
+  await audit({ actorId: actor.id, action: "settings.environments", metadata: { removed: slug, envs: parsed.data.map((e) => ({ slug: e.slug, branches: e.branchPatterns })) } });
+  revalidatePath("/", "layout");
+  return done(`Ambiente ${target.name} removido.`);
+}
+
+export async function savePolicies(form: FormData): Promise<SettingsResult> {
   const actor = await requirePermission("settings:manage");
   const parsed = setupSchemas.policies.safeParse({
     autoApproveOrgMembers: form.get("auto") === "on", outsiderPolicy: form.get("outsider"),
@@ -85,8 +110,8 @@ export async function savePolicies(_: SettingsResult, form: FormData): Promise<S
   return done("Regras salvas. A duração de sessão vale para os próximos logins.");
 }
 
-/** RN-77: encerra as sessões de todo mundo (JWT) menos a de quem clicou. */
-export async function endAllSessions(_: SettingsResult, form: FormData): Promise<SettingsResult> {
+/** RN-77: encerra as sessões de todo mundo (JWT) menos a de quem clicou. A frase "ENCERRAR" é conferida aqui, no servidor, e não só no botão do modal. */
+export async function endAllSessions(form: FormData): Promise<SettingsResult> {
   const actor = await requirePermission("settings:manage");
   if (form.get("confirm") !== "ENCERRAR") return fail("Digite ENCERRAR para confirmar.");
   const { count } = await prisma.user.updateMany({ where: { id: { not: actor.id } }, data: { tokenVersion: { increment: 1 } } });
@@ -98,7 +123,7 @@ export async function recheckAll(): Promise<SettingsResult> {
   const actor = await requirePermission("settings:manage");
   await forceMembershipRecheck();
   await audit({ actorId: actor.id, action: "settings.membership_recheck" });
-  return done("Vínculos serão conferidos no próximo acesso de cada pessoa.");
+  return done("Cada pessoa será conferida de novo no próximo acesso.");
 }
 
 export async function cancelRecovery(): Promise<SettingsResult> {
@@ -144,7 +169,7 @@ export async function generateWebhookSecret(type: SourceProvider): Promise<Setti
   const secret = randomBytes(32).toString("base64url");
   await prisma.sourceIntegration.update({ where: { type }, data: { webhookSecretEnc: encryptSecret(secret) } });
   await audit({ actorId: actor.id, action: "settings.webhook_secret", metadata: { type } });
-  return done(`Segredo do webhook (${type}). Copie agora, ele não aparece de novo: ${secret}`);
+  return done("Segredo gerado. Cole no provedor agora: ele não aparece de novo.", secret);
 }
 
 export async function generateSyncToken(): Promise<SettingsResult> {
@@ -152,5 +177,5 @@ export async function generateSyncToken(): Promise<SettingsResult> {
   const token = randomBytes(32).toString("base64url");
   await prisma.installation.update({ where: { id: "singleton" }, data: { syncTokenHash: sha256(token) } });
   await audit({ actorId: actor.id, action: "settings.sync_token" });
-  return done(`Token do cron. Copie agora, ele não aparece de novo: ${token}`);
+  return done("Token gerado. Guarde agora: ele não aparece de novo.", token);
 }

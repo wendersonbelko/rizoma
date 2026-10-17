@@ -4,9 +4,11 @@ import { prisma } from "@api-hub/db";
 import { RESOURCE_KIND_LABEL, RESOURCE_RELATION_LABEL, can, canSeeService, paginate, readPageRequest } from "@api-hub/core";
 import { requirePermission } from "@/lib/guards";
 import { getEnvironments } from "@/lib/install";
+import { Breadcrumb } from "@/components/breadcrumb";
+import { DangerAction, DangerZone } from "@/components/danger-zone";
 import { EnvBadge } from "@/components/env";
 import { Markdown } from "@/components/markdown";
-import { Button, Input, Panel, Section } from "@/components/ui";
+import { Panel, Section } from "@/components/ui";
 import { FormModal } from "@/components/form-modal";
 import { EmptyState } from "@/components/empty-state";
 import { Pagination } from "@/components/pagination";
@@ -14,11 +16,10 @@ import { CellTitle, DataTable, TBody, THead, Td, Th, Tr } from "@/components/tab
 import { deleteResource } from "../actions";
 import { ResourceForm } from "../form";
 
-export default async function ResourcePage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ erro?: string; page?: string; size?: string }> }) {
+export default async function ResourcePage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string; size?: string }> }) {
   const user = await requirePermission("catalog:read");
   const { slug } = await params;
   const sp = await searchParams;
-  const { erro } = sp;
   const envs = await getEnvironments();
   const r = await prisma.externalResource.findUnique({
     where: { slug },
@@ -30,15 +31,24 @@ export default async function ResourcePage({ params, searchParams }: { params: P
   const { items: servicesPage, info } = paginate(services, readPageRequest(sp));
   const canEdit = can(user, "link:edit");
 
+  // Glossário (achado V4): a relação entre a integração e um serviço é um "vínculo".
+  const deleteEffect =
+    r.services.length === 0
+      ? "Remove a integração e os endereços cadastrados."
+      : r.services.length === 1
+        ? "Remove a integração, os endereços cadastrados e o vínculo com 1 serviço."
+        : `Remove a integração, os endereços cadastrados e os ${r.services.length} vínculos com serviços.`;
+
   return (
     <div className="max-w-5xl space-y-6">
-      <header>
-        <Link href="/integrations" className="text-sm text-muted hover:text-ink">Integrações externas</Link>
-        <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+      <header className="space-y-1">
+        {/* Achado N2 da auditoria de UX de 02/10/2026: trilha no lugar do link solto para a lista. */}
+        <Breadcrumb items={[{ label: "Integrações externas", href: "/integrations" }, { label: r.name }]} />
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           <h1 className="text-3xl font-bold tracking-tight">{r.name}</h1>
           <span className="text-sm text-muted">{RESOURCE_KIND_LABEL[r.kind]}{r.provider ? ` · ${r.provider}` : ""}</span>
           {canEdit && (
-            <FormModal label="Editar" title="Editar integração" wide>
+            <FormModal label="Editar" title="Editar integração" size="md">
               <ResourceForm envs={envs} resource={r} />
             </FormModal>
           )}
@@ -48,21 +58,21 @@ export default async function ResourcePage({ params, searchParams }: { params: P
 
       {r.description && <Panel><Markdown>{r.description}</Markdown></Panel>}
       <Section title="Endereços por ambiente">
-            <DataTable caption="Endereço da integração em cada ambiente" minWidth={480}>
-              <THead>
-                <Th width={200}>Ambiente</Th>
-                <Th>Endereço</Th>
-              </THead>
-              <TBody>
-                {envs.map((e) => (
-                  <Tr key={e.id}>
-                    <Td nowrap><EnvBadge env={e} small /> <span className="ml-1">{e.name}</span></Td>
-                    <Td mono>{r.endpoints.find((x) => x.environmentId === e.id)?.value ?? <span className="font-sans text-muted">não informado</span>}</Td>
-                  </Tr>
-                ))}
-              </TBody>
-            </DataTable>
-        </Section>
+        <DataTable caption="Endereço da integração em cada ambiente" minWidth={480}>
+          <THead>
+            <Th width={200}>Ambiente</Th>
+            <Th>Endereço</Th>
+          </THead>
+          <TBody>
+            {envs.map((e) => (
+              <Tr key={e.id}>
+                <Td nowrap><EnvBadge env={e} small /> <span className="ml-1">{e.name}</span></Td>
+                <Td mono>{r.endpoints.find((x) => x.environmentId === e.id)?.value ?? <span className="font-sans text-muted">não informado</span>}</Td>
+              </Tr>
+            ))}
+          </TBody>
+        </DataTable>
+      </Section>
 
       <Section
         title={`Serviços que usam (${services.length})`}
@@ -93,22 +103,17 @@ export default async function ResourcePage({ params, searchParams }: { params: P
       </Section>
 
       {canEdit && (
-        <FormModal label="Excluir integração" title="Excluir integração" tone="quiet">
-          <form action={deleteResource} className="space-y-4">
-            <input type="hidden" name="id" value={r.id} />
-            <p className="text-sm text-muted">
-              {r.services.length === 0 && "Remove a integração."}
-              {r.services.length === 1 && "Remove a integração e a ligação com 1 serviço."}
-              {r.services.length > 1 && `Remove a integração e as ${r.services.length} ligações com serviços.`}
-              {" "}Digite EXCLUIR para confirmar.
-            </p>
-            <Input name="confirm" className="w-40" autoComplete="off" />
-            <div className="flex items-center gap-3">
-              <Button tone="danger">Excluir</Button>
-              {erro && <span className="text-sm text-danger">Confirmação incorreta.</span>}
-            </div>
-          </form>
-        </FormModal>
+        // Achado F3: padrão único de ação destrutiva. Excluir não tem volta, então pede o nome da integração.
+        <DangerZone>
+          <DangerAction
+            title="Excluir integração"
+            description={`${deleteEffect} Não dá para desfazer.`}
+            actionLabel="Excluir integração"
+            action={deleteResource}
+            fields={{ id: r.id }}
+            confirmText={r.name}
+          />
+        </DangerZone>
       )}
     </div>
   );

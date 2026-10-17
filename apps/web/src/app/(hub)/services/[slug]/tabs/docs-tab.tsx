@@ -5,6 +5,7 @@ import type { CurrentUser } from "@/lib/guards";
 import { Markdown } from "@/components/markdown";
 import { LinkButton } from "@/components/ui";
 import { FormModal } from "@/components/form-modal";
+import { DangerAction, DangerZone } from "@/components/danger-zone";
 import { EmptyState } from "@/components/empty-state";
 import { deleteDoc } from "../actions";
 import { DocEditor } from "../forms/doc-editor";
@@ -40,10 +41,20 @@ export async function DocsTab({ user, service, slug, sp, hrefFor }: {
           </header>
           <Markdown>{current.content || "_Página vazia._"}</Markdown>
           {canEdit && (
-            <form action={deleteDoc} className="mt-8 border-t border-line pt-4">
-              <input type="hidden" name="id" value={current.id} />
-              <button className="text-sm text-danger">Excluir esta página</button>
-            </form>
+            <div className="mt-8">
+              {/* Achado F3 da auditoria de UX de 02/10/2026: ação destrutiva sempre numa DangerZone. Sem volta,
+                  então pede o título da página (o servidor confere de novo em deleteDoc). */}
+              <DangerZone>
+                <DangerAction
+                  title="Excluir esta página"
+                  description="A página e o texto dela são apagados do hub. Se o repositório do serviço estiver conectado, o arquivo dela também sai de lá. Não dá para desfazer."
+                  actionLabel="Excluir página"
+                  action={deleteDoc}
+                  fields={{ id: current.id }}
+                  confirmText={current.title}
+                />
+              </DangerZone>
+            </div>
           )}
         </article>
       ) : (
@@ -54,7 +65,7 @@ export async function DocsTab({ user, service, slug, sp, hrefFor }: {
         />
       )}
       {(creating || editing) && (
-        <FormModal title={editing ? `Editar: ${current.title}` : "Nova página"} wide forced closeHref={hrefFor({ edit: "" })}>
+        <FormModal title={editing ? `Editar: ${current.title}` : "Nova página"} size="lg" forced closeHref={hrefFor({ edit: "" })}>
           <DocEditor serviceId={service.id} slug={slug} doc={editing ? current : undefined} />
         </FormModal>
       )}

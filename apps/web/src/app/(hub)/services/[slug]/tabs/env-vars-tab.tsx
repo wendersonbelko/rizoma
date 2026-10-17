@@ -41,11 +41,11 @@ export async function EnvVarsTab({ user, service, env, envs, editingKey, slug, h
             <a href={`/api/services/${slug}/dotenv?env=${env.slug}`} className="text-sm text-accent">Baixar .env (sem segredos)</a>
             {canEdit && envs.length > 1 && (
               <FormModal label="Copiar de outro ambiente" title={`Copiar chaves para ${env.name}`}>
-                <CopyEnvForm serviceId={service.id} envs={envs} toEnvId={env.id} />
+                <CopyEnvForm serviceId={service.id} envs={envs} toEnvId={env.id} toName={env.name} />
               </FormModal>
             )}
             {canEdit && (
-              <FormModal label="Nova variável" title={`Nova variável em ${env.name}`} tone="primary">
+              <FormModal label="Nova variável" title={`Nova variável em ${env.name}`} tone="primary" size="md">
                 <EnvVarForm serviceId={service.id} environmentId={env.id} envName={env.name} />
               </FormModal>
             )}
@@ -69,7 +69,7 @@ export async function EnvVarsTab({ user, service, env, envs, editingKey, slug, h
         )}
       </Section>
       {canEdit && editing && (
-        <FormModal title={`Editar ${editing.key} em ${env.name}`} forced closeHref={hrefKeepingPage({ var: "" })}>
+        <FormModal title={`Editar ${editing.key} em ${env.name}`} size="md" forced closeHref={hrefKeepingPage({ var: "" })}>
           <EnvVarForm key={editing.id} serviceId={service.id} environmentId={env.id} envName={env.name} current={editing} />
         </FormModal>
       )}

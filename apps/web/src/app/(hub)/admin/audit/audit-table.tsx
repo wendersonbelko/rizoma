@@ -5,20 +5,18 @@ import type { queryAudit } from "./query";
 
 type Row = Awaited<ReturnType<typeof queryAudit>>["rows"][number];
 
-export function AuditTable({ rows, targets, hrefFor, pagination }: {
-  rows: Row[]; targets: Record<string, string>; hrefFor: (id: string) => string; pagination?: ReactNode;
-}) {
+/**
+ * Lista da auditoria. Cabeçalho fixo na rolagem da PÁGINA, sem barra de rolagem interna (achado D5):
+ * o `stickyHeader` do DataTable já resolve, é só usá-lo com `<THead sticky>`.
+ */
+export function AuditTable({ rows, targets, pagination }: { rows: Row[]; targets: Record<string, string>; pagination?: ReactNode }) {
   return (
-    <DataTable tour="audit-table" caption="Registros de auditoria" minWidth={720} stickyHeader pagination={pagination}>
+    <DataTable tour="audit-table" caption="Registros de auditoria" minWidth={560} stickyHeader pagination={pagination}>
       <THead sticky>
-        <Th>Quando</Th>
-        <Th>Quem</Th>
-        <Th>Ação</Th>
-        <Th>Alvo</Th>
-        <Th hideBelow="lg">IP</Th>
+        <Th>O que aconteceu</Th>
       </THead>
       <TBody>
-        {rows.map((r) => <AuditRow key={r.id} row={r} targetName={r.targetId ? targets[r.targetId] : undefined} href={hrefFor(r.id)} />)}
+        {rows.map((r) => <AuditRow key={r.id} row={r} targets={targets} />)}
       </TBody>
     </DataTable>
   );

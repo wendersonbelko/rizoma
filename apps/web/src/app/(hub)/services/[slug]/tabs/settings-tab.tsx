@@ -1,10 +1,12 @@
-import { SPEC_SOURCE_LABEL, canManageService } from "@api-hub/core";
+import Link from "next/link";
+import { SPEC_SOURCE_LABEL, can, canManageService } from "@api-hub/core";
 import type { CurrentUser } from "@/lib/guards";
-import { Panel } from "@/components/ui";
+import { LinkButton, Panel } from "@/components/ui";
 import { FormModal } from "@/components/form-modal";
 import { renderServiceHubFile } from "@/lib/hub-manifest";
 import { parseRepoSync } from "@/lib/repo-state";
 import { HubFilePanel } from "../hub-file-panel";
+import { SPEC_SOURCE_HELP } from "../spec-source-help";
 import { RepoConflicts } from "../forms/repo-conflicts";
 import { RepoSyncButton } from "../forms/repo-sync-button";
 import { SpecUploadForm } from "../forms/spec-upload-form";
@@ -13,7 +15,7 @@ import type { ServiceDetail } from "../types";
 
 type Env = { id: string; slug: string; name: string };
 
-/** Aba Configurações: publicar a spec, sincronizar o repositório e mostrar o hub.json. */
+/** Aba Configurações: origem da spec, publicar a spec, sincronizar o repositório e mostrar o hub.json. */
 export async function SettingsTab({ user, service, env }: {
   user: CurrentUser; service: ServiceDetail; env: Env;
 }) {
@@ -33,17 +35,25 @@ export async function SettingsTab({ user, service, env }: {
         </Panel>
       )}
     <div className="grid items-start gap-5 xl:grid-cols-2">
+      {/* Achado D3 da auditoria de UX de 02/10/2026: "Ver origem" do aviso da aba da API e o passo "Escolher como a spec chega" do checklist caem aqui. */}
+      <Panel title="Origem da spec" id="origin" action={canEdit ? <LinkButton href={`/services/${service.slug}/edit#spec-source`} tone="quiet">Alterar origem</LinkButton> : undefined}>
+        <p className="font-semibold">{SPEC_SOURCE_LABEL[service.specSource]}</p>
+        <p className="mt-1 text-sm text-muted">{SPEC_SOURCE_HELP[service.specSource]}</p>
+        {service.specSource === "CI_PUSH" && canEdit && can(user, "token:manage") && (
+          <p className="mt-3 text-sm"><Link href={`/admin/tokens?service=${service.id}#new-token`} className="text-accent">Gerar token de CI</Link></p>
+        )}
+      </Panel>
+
       <Panel title="Publicar spec" action={<span className="text-sm text-muted">{env.name}</span>}>
-        <p className="text-sm text-muted">A origem configurada é {SPEC_SOURCE_LABEL[service.specSource]}.</p>
         {canPublish ? (
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <FormModal label="Publicar spec" title={`Publicar spec em ${env.name}`} tone="primary">
               <SpecUploadForm serviceId={service.id} environmentId={env.id} envName={env.name} />
             </FormModal>
             {pulls && <SyncButton serviceId={service.id} />}
           </div>
         ) : (
-          <p className="mt-4 text-sm text-muted">Você não publica spec neste serviço.</p>
+          <p className="text-sm text-muted">Você não publica spec neste serviço.</p>
         )}
       </Panel>
 

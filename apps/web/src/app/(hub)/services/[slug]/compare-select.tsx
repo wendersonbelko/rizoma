@@ -10,7 +10,7 @@ export function CompareSelect({ value, options }: { value: string; options: { sl
       Comparar
       <select
         aria-label="Comparar contrato com outro ambiente"
-        className="h-10 rounded-control border border-line bg-paper px-3 text-sm text-ink outline-none focus:border-accent focus:ring-4 focus:ring-accent/15"
+        className="h-10 rounded-control border border-line-strong bg-paper px-3 text-sm text-ink outline-none focus:border-accent focus:ring-4 focus:ring-accent/15"
         value={value}
         onChange={(e) => {
           const href = options.find((o) => o.slug === e.target.value)?.href;

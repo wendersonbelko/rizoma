@@ -1,12 +1,12 @@
 import { prisma } from "@api-hub/db";
-import { can, canSeeService } from "@api-hub/core";
+import { can, canSeeService, parseFocusScope, personLabel } from "@api-hub/core";
 import type { GraphInput } from "@api-hub/core/graph";
 import { requirePermission } from "@/lib/guards";
 import { GraphView } from "./graph-view";
 
-export default async function GraphPage({ searchParams }: { searchParams: Promise<{ focus?: string }> }) {
+export default async function GraphPage({ searchParams }: { searchParams: Promise<{ focus?: string; depth?: string }> }) {
   const user = await requirePermission("graph:read");
-  const { focus } = await searchParams;
+  const { focus, depth } = await searchParams;
 
   const [services, repositories, teams, people, serviceDeps, repoLinks, serviceRepos, resources, serviceResources] = await Promise.all([
     prisma.service.findMany({ where: { archivedAt: null }, select: { id: true, slug: true, name: true, ownerTeamId: true, lifecycle: true, visibility: true, kind: true } }),
@@ -29,7 +29,7 @@ export default async function GraphPage({ searchParams }: { searchParams: Promis
     services: visible.map((s) => ({ ...s, systemKind: s.kind })),
     repositories,
     teams,
-    people: people.map((p) => ({ id: p.id, name: p.githubLogin ? `@${p.githubLogin}` : p.name ?? p.email ?? "?", teamIds: p.teams.map((t) => t.teamId) })),
+    people: people.map((p) => ({ id: p.id, name: personLabel(p, "Pessoa sem nome"), teamIds: p.teams.map((t) => t.teamId) })),
     serviceDeps: serviceDeps.filter((d) => ids.has(d.fromServiceId) && ids.has(d.toServiceId)),
     repoLinks,
     serviceRepos: serviceRepos.filter((r) => ids.has(r.serviceId)),
@@ -41,9 +41,9 @@ export default async function GraphPage({ searchParams }: { searchParams: Promis
     <div className="flex h-[calc(100dvh-6.5rem)] min-h-[560px] flex-col gap-3">
       <header>
         <h1 className="text-2xl font-bold tracking-tight">Mapa de ligações</h1>
-        <p className="text-sm text-muted">Clique para ver a vizinhança. Duplo clique abre o item.</p>
+        <p className="text-sm text-muted">Um clique troca o foco; duplo clique abre o item. O que está fora do foco fica esmaecido, não some.</p>
       </header>
-      <GraphView input={input} initialFocus={focus} canEdit={canEdit} />
+      <GraphView input={input} initialFocus={focus} initialScope={parseFocusScope(depth)} canEdit={canEdit} />
     </div>
   );
 }

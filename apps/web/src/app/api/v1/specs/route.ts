@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   if (!env) {
     return err(422, envSlug
       ? `Ambiente "${envSlug}" não existe.`
-      : `A branch "${branch}" não corresponde a nenhum ambiente. Informe "environment" ou ajuste as regras em Configurações → Ambientes.`,
+      : `A branch "${branch}" não corresponde a nenhum ambiente. Informe "environment" ou ajuste as regras em Configurações → Ambientes e sessões.`,
       { environments: envs.map((e) => ({ slug: e.slug, branches: e.branchPatterns })) });
   }
 

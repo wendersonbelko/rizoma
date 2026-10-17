@@ -105,22 +105,23 @@ describe("matriz de permissões", () => {
 });
 
 describe("aparência", () => {
-  it("salva título e tema, e recusa cores ilegíveis", async () => {
+  it("salva nome e cor de destaque, e recusa cor ilegível", async () => {
     await install();
     current = await asCurrent((await makeUser("adm", { role: "ADMIN" })).id);
-    const ruim = await saveAppearance({ appName: "Portal de APIs", themeId: "oceano", palette: { accent: "#f0f0f0", "accent-ink": "#ffffff" } });
+    // Achado F5 da auditoria de UX: o admin só define a marca; o tema Claro/Escuro é de cada pessoa.
+    const ruim = await saveAppearance({ appName: "Portal de APIs", accent: "#f0f0f0" });
     expect(ruim.ok).toBe(false);
-    expect(ruim.problems?.join()).toMatch(/botões/);
+    expect(ruim.problems?.join()).toMatch(/clara demais/);
 
-    const ok = await saveAppearance({ appName: "Portal de APIs", themeId: "oceano", palette: { accent: "#123a6b" } });
+    const ok = await saveAppearance({ appName: "Portal de APIs", accent: "#123a6b" });
     expect(ok.ok).toBe(true);
-    expect(await prisma.installation.findUniqueOrThrow({ where: { id: "singleton" } })).toMatchObject({ appName: "Portal de APIs", themeId: "oceano", themeOverrides: { accent: "#123a6b" } });
+    expect(await prisma.installation.findUniqueOrThrow({ where: { id: "singleton" } })).toMatchObject({ appName: "Portal de APIs", themeOverrides: { accent: "#123a6b" } });
   });
 
   it("VIEWER não mexe na aparência", async () => {
     await install();
     current = await asCurrent((await makeUser("v")).id);
-    await expect(saveAppearance({ appName: "X Y", themeId: "grafite", palette: {} })).rejects.toThrow("NEXT_NOT_FOUND");
+    await expect(saveAppearance({ appName: "X Y", accent: "#123a6b" })).rejects.toThrow("NEXT_NOT_FOUND");
   });
 });
 

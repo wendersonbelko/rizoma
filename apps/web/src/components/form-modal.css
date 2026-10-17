@@ -1,0 +1,91 @@
+/*
+  Modal-padrão do hub (achados M1 e M5 da auditoria de UX de 02/10/2026): cabeçalho com título e ×,
+  corpo com rolagem própria e rodapé fixo (Cancelar à esquerda do botão principal).
+  Larguras 480 / 640 / 800 px. Estas regras moram aqui, junto de form-modal.tsx, e não em globals.css.
+  Os tokens --color-raised e --color-overlay vêm do tema (elevação do modal no escuro, p. 11 da
+  auditoria); o segundo argumento de var() é o valor de antes, para o modal nunca ficar sem fundo.
+*/
+dialog.hub-modal {
+  --hub-modal-px: 1.5rem;
+  --hub-modal-py: 1.25rem;
+  margin: auto;
+  padding: 0;
+  width: min(30rem, calc(100% - 2rem));
+  max-width: calc(100% - 2rem);
+  /* O corpo rola; o diálogo nunca passa da tela. */
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 16px;
+  background: var(--color-raised, var(--color-sheet));
+  color: var(--color-ink);
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--color-shadow, var(--color-ink)) 28%, transparent);
+}
+/* display só quando aberto: um display fixo faria o <dialog> fechado aparecer na página. */
+dialog.hub-modal[open] { display: flex; flex-direction: column; }
+dialog.hub-modal.hub-modal-md { width: min(40rem, calc(100% - 2rem)); }
+dialog.hub-modal.hub-modal-lg { width: min(50rem, calc(100% - 2rem)); }
+.hub-modal::backdrop { background: var(--color-overlay, color-mix(in srgb, var(--color-ink) 45%, transparent)); }
+.hub-modal:focus { outline: none; }
+
+.hub-modal-header {
+  display: flex;
+  flex: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem var(--hub-modal-px);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.hub-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--hub-modal-py) var(--hub-modal-px);
+}
+
+/*
+  Rodapé fixo. Fica como último filho do <form> (precisa estar dentro dele para o botão enviar):
+  gruda no fim do corpo que rola e, com a margem lateral negativa, cobre o respiro do corpo até as bordas.
+  O `sticky` respeita o padding do contêiner que rola; por isso, quando há rodapé, o corpo fica sem
+  respiro embaixo (o rodapé já tem o seu) e o rodapé encosta na borda do diálogo.
+*/
+.hub-modal-body:has(.hub-modal-actions) { padding-bottom: 0; }
+.hub-modal-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin: 1.5rem calc(var(--hub-modal-px) * -1) 0;
+  padding: 0.875rem var(--hub-modal-px);
+  border-top: 1px solid var(--color-line);
+  background: var(--color-raised, var(--color-sheet));
+}
+.hub-modal-actions-message { margin-right: auto; min-width: 0; font-size: 0.875rem; }
+
+/* Confirmação de descarte: cobre o diálogo inteiro, acima do rodapé fixo. */
+.hub-modal-confirm {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--color-raised, var(--color-sheet)) 72%, transparent);
+}
+.hub-modal-confirm-card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 1.25rem;
+  border: 1px solid var(--color-line-strong, var(--color-line));
+  border-radius: 12px;
+  background: var(--color-raised, var(--color-sheet));
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--color-shadow, var(--color-ink)) 22%, transparent);
+}

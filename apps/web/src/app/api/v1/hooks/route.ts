@@ -5,7 +5,7 @@ import { syncService } from "@/lib/sources";
 export const dynamic = "force-dynamic";
 
 /**
- * Push do GitHub, GitLab ou Bitbucket. O segredo é o que foi gerado em Configurações → Repositórios.
+ * Push do GitHub, GitLab ou Bitbucket. O segredo é o que foi gerado em Configurações → Conexões.
  * Serviços cuja spec vem do arquivo desse repositório são sincronizados.
  */
 export async function POST(req: Request) {

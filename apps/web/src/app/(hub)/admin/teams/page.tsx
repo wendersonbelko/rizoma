@@ -1,16 +1,24 @@
 import { prisma } from "@api-hub/db";
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { SECONDARY_PAGE_SIZE, paginate, readPageRequest, type QueryParams } from "@api-hub/core";
+import { SECONDARY_PAGE_SIZE, paginate, personLabel, readPageRequest, type QueryParams } from "@api-hub/core";
 import { requirePermission } from "@/lib/guards";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { EmptyState } from "@/components/empty-state";
 import { FilterChips } from "@/components/filter-chips";
 import { Pagination } from "@/components/pagination";
+import { Input } from "@/components/ui";
 import { TeamCreateForm } from "./create-form";
 import { TeamSection } from "./team-section";
 import { TeamsTable, rowHref, teamListHref } from "./teams-table";
 
 const text = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+
+/** Até três nomes na lista; o resto vira "+N" (o time aberto mostra todo mundo). */
+function peopleSummary(members: { user: { name: string | null; githubLogin: string | null; email: string | null } }[]) {
+  const names = members.slice(0, 3).map((m) => personLabel(m.user));
+  const more = members.length - names.length;
+  return `${names.join(", ")}${more > 0 ? ` +${more}` : ""}`;
+}
 
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<QueryParams> }) {
   await requirePermission("team:manage");
@@ -43,15 +51,13 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     if (f === "with" && t.members.length === 0) return false;
     if (f === "without" && t.members.length > 0) return false;
     if (!needle) return true;
-    const people = t.members.map((m) => m.user.githubLogin ?? m.user.email ?? m.user.name ?? "").join(" ");
+    const people = t.members.map((m) => `${m.user.name ?? ""} ${m.user.githubLogin ?? ""} ${m.user.email ?? ""}`).join(" ");
     const blob = `${t.name} ${t.slug} ${t.services.map((s) => s.name).join(" ")} ${people}`.toLocaleLowerCase("pt-BR");
     return blob.includes(needle);
   });
   const { items: teams, info } = paginate(filtered, readPageRequest(sp, { defaultSize: SECONDARY_PAGE_SIZE }));
   const opened = filtered.find((t) => t.slug === openSlug);
   const withMembers = all.filter((t) => t.members.length > 0).length;
-
-  const who = (m: (typeof all)[number]["members"][number]) => (m.user.githubLogin ? `@${m.user.githubLogin}` : (m.user.email ?? m.user.name ?? ""));
 
   return (
     <div className="max-w-5xl space-y-5">
@@ -65,20 +71,14 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
 
       {opened ? (
         <div className="space-y-4">
-          <Link href={teamListHref(q, f)} className="text-sm text-muted hover:text-ink">← Times</Link>
+          <Breadcrumb items={[{ label: "Times", href: teamListHref(q, f) }, { label: opened.name }]} />
           <TeamSection team={opened} params={sp} />
         </div>
       ) : (
         <>
           <form action="/admin/teams" className="flex flex-wrap items-center gap-3">
             {f !== "all" && <input type="hidden" name="f" value={f} />}
-            <input
-              name="q"
-              defaultValue={q}
-              placeholder="Buscar time, serviço ou pessoa"
-              aria-label="Buscar times"
-              className="h-11 w-full max-w-sm rounded-control border border-line bg-field px-3 text-[15px] outline-none placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/15"
-            />
+            <Input name="q" defaultValue={q} placeholder="Buscar time, serviço ou pessoa" aria-label="Buscar times" className="max-w-sm" />
           </form>
 
           <FilterChips
@@ -99,7 +99,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
                 slug: t.slug,
                 name: t.name,
                 services: t.services.map((s) => s.name).join(", "),
-                people: t.members.slice(0, 3).map(who).filter(Boolean).join(", "),
+                people: peopleSummary(t.members),
                 members: t.members.length,
                 href: rowHref(q, f, t.slug),
               }))}

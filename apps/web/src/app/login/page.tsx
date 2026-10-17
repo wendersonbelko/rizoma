@@ -10,10 +10,10 @@ import { PasswordForm } from "./password-form";
 export const dynamic = "force-dynamic";
 
 const ERRORS: Record<string, string> = {
-  not_member: "Sua conta não comprova vínculo com a empresa, e esta instalação não aceita pedidos de fora.",
+  not_member: "Sua conta não comprova vínculo com a empresa, e esta instalação não aceita solicitações de fora.",
   setup_in_progress: "A instalação ainda não terminou. Só o administrador definido no assistente pode entrar.",
   suspended: "Seu acesso está suspenso. Fale com um administrador.",
-  rejected: "Seu pedido de acesso foi recusado. Fale com um administrador.",
+  rejected: "Sua solicitação de acesso foi recusada. Fale com um administrador.",
   reauth: "Precisamos confirmar seu vínculo com a empresa. Entre de novo.",
   session_revoked: "Sua sessão foi encerrada. Entre de novo.",
   OAuthAccountNotLinked: "Esse e-mail já entra por outra forma de login. Use a mesma de antes.",

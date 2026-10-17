@@ -1,17 +1,19 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { prisma, type Prisma } from "@api-hub/db";
-import { SECONDARY_PAGE_SIZE, can, pageInfo, paginate, readPageRequest, type QueryParams } from "@api-hub/core";
+import { SECONDARY_PAGE_SIZE, ROLES, can, canChangeRole, pageInfo, paginate, personLabel, readPageRequest, type QueryParams } from "@api-hub/core";
+import { prisma } from "@api-hub/db";
 import { requireUser } from "@/lib/guards";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { EmptyState } from "@/components/empty-state";
 import { FilterChips } from "@/components/filter-chips";
 import { Pagination } from "@/components/pagination";
-import { FormModal } from "@/components/form-modal";
+import { FormModal, ModalActions } from "@/components/form-modal";
+import { Input, LinkButton } from "@/components/ui";
 import { InviteForm } from "./invite-forms";
 import { PendingRequestsPanel } from "./pending-requests-panel";
 import { PeopleTable } from "./people-table";
 import { DecisionHistory } from "./decision-history";
 import { PersonDetail } from "./person-detail";
+import { loadHistory, loadPeople, loadPersonEvents } from "./query";
 
 const HISTORY_KEYS = { pageKey: "hpage", sizeKey: "hsize" };
 const text = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
@@ -34,8 +36,9 @@ function listHref(q: string, f: string, v = "people") {
 }
 
 /**
- * Pessoas e acesso: uma lista por vez. O filtro escolhe pessoas, pedidos ou histórico.
- * Abrir uma pessoa substitui a lista pelo acesso dela.
+ * Pessoas e acesso: uma lista por vez. O filtro escolhe pessoas, solicitações de acesso ou histórico.
+ * Abrir uma pessoa substitui a lista pelo acesso dela. A chave de URL `v=requests` continua a mesma
+ * mesmo com o nome novo "Solicitações de acesso" (achado V4 da auditoria de UX de 02/10/2026).
  */
 export default async function PeoplePage({ searchParams }: { searchParams: Promise<QueryParams> }) {
   const actor = await requireUser();
@@ -64,19 +67,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
     const s = p.toString();
     redirect(s ? `/admin/people?${s}` : "/admin/people");
   }
+  const canManage = can(actor, "user:manage");
   const credentials = await prisma.authProvider.findUnique({ where: { type: "CREDENTIALS" } });
-  await prisma.accessRequest.updateMany({ where: { status: "PENDING", expiresAt: { lte: new Date() } }, data: { status: "EXPIRED" } });
-
-  const peopleWhere: Prisma.UserWhereInput = { status: { not: "PENDING" } };
-  const [requests, users, historyTotal] = await Promise.all([
-    prisma.accessRequest.findMany({ where: { status: "PENDING" }, include: { user: true }, orderBy: { createdAt: "asc" } }),
-    prisma.user.findMany({
-      where: peopleWhere,
-      orderBy: [{ role: "asc" }, { email: "asc" }, { id: "asc" }],
-      include: { teams: { include: { team: { select: { name: true, slug: true } } } } },
-    }),
-    prisma.auditLog.count({ where: { action: { startsWith: "access." } } }),
-  ]);
+  const { requests, users, historyTotal } = await loadPeople();
 
   const needle = q.toLocaleLowerCase("pt-BR");
   const matched = users.filter((u) => {
@@ -90,24 +83,14 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const opened = personId ? users.find((u) => u.id === personId) : undefined;
   const activeCount = users.filter((u) => u.status === "ACTIVE").length;
   const suspendedCount = users.filter((u) => u.status === "SUSPENDED").length;
-  const events = opened
-    ? await prisma.auditLog.findMany({
-      where: { OR: [{ actorId: opened.id }, { targetId: opened.id }], action: { startsWith: "access." } },
-      orderBy: { createdAt: "desc" },
-      take: 20,
-      select: { id: true, createdAt: true, action: true },
-    })
-    : [];
+  const personEvents = opened ? await loadPersonEvents(opened.id) : null;
   const historyReq = readPageRequest(sp, { ...HISTORY_KEYS, defaultSize: SECONDARY_PAGE_SIZE });
   const historyInfo = pageInfo(historyTotal, historyReq);
-  const history = view === "history"
-    ? await prisma.auditLog.findMany({
-      where: { action: { startsWith: "access." } },
-      orderBy: { createdAt: "desc" },
-      skip: historyInfo.skip,
-      take: historyInfo.take,
-      include: { actor: { select: { githubLogin: true, email: true } } },
-    })
+  const history = view === "history" ? await loadHistory(historyInfo) : null;
+  // Papéis que quem está logado pode dar a esta pessoa (regra canChangeRole). O papel atual sempre entra.
+  const ownerCount = users.filter((u) => u.role === "OWNER").length;
+  const roleOptions = opened
+    ? ROLES.filter((r) => r === opened.role || canChangeRole({ actor, target: opened, newRole: r, ownerCount }).ok)
     : [];
 
   return (
@@ -117,26 +100,32 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           <h1 className="text-2xl font-bold tracking-tight">Pessoas e acesso</h1>
           <p className="text-sm text-muted">Quem entra no hub. Abra uma pessoa para mudar o papel e o acesso.</p>
         </div>
-        {can(actor, "user:manage") && (
-          <FormModal tour="people-invite" label="Convidar usuário" title="Convidar usuário" wide tone="primary">
+        {canManage && (
+          <FormModal id="invite" tour="people-invite" label="Convidar pessoa" title="Convidar pessoa" tone="primary" size="sm"
+            description={credentials?.enabled ? "A pessoa recebe um link para criar a senha." : undefined}>
             {credentials?.enabled ? (
-              <p className="mb-4 text-sm text-muted">A pessoa recebe um link para criar a senha. Se o e-mail do hub estiver configurado, o convite é enviado; o link também aparece aqui para copiar.</p>
+              <InviteForm canInviteAdmin={actor.role === "OWNER"} />
             ) : (
-              <p className="mb-4 text-sm text-muted">Para o convite funcionar, ative o login por e-mail e senha em <Link href="/admin/settings?s=login" className="text-accent">Configurações</Link>.</p>
+              <>
+                <p className="text-sm text-muted">Para o convite funcionar, ative o login por e-mail e senha em Configurações.</p>
+                <ModalActions cancelLabel="Fechar"><LinkButton href="/admin/settings?s=connections#login">Abrir Configurações</LinkButton></ModalActions>
+              </>
             )}
-            <InviteForm canInviteAdmin={actor.role === "OWNER"} />
           </FormModal>
         )}
       </div>
 
-      {opened ? (
+      {opened && personEvents ? (
         <div className="space-y-4">
-          <Link href={listHref(q, f)} className="text-sm text-muted hover:text-ink">← Pessoas</Link>
+          <Breadcrumb items={[{ label: "Pessoas e acesso", href: listHref(q, f) }, { label: personLabel(opened) }]} />
           <PersonDetail
             person={opened}
             isSelf={opened.id === actor.id}
-            canResetPassword={!!credentials?.enabled && can(actor, "user:manage")}
-            events={events}
+            canManage={canManage}
+            canResetPassword={!!credentials?.enabled && canManage && !!opened.passwordHash}
+            roleOptions={roleOptions}
+            events={personEvents.entries}
+            targets={personEvents.targets}
           />
         </div>
       ) : (
@@ -144,13 +133,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
           {view === "people" && (
             <form action="/admin/people" className="flex flex-wrap items-center gap-3">
               {f !== "all" && <input type="hidden" name="f" value={f} />}
-              <input
-                name="q"
-                defaultValue={q}
-                placeholder="Buscar nome, e-mail ou time"
-                aria-label="Buscar pessoas"
-                className="h-11 w-full max-w-sm rounded-control border border-line bg-field px-3 text-[15px] outline-none placeholder:text-muted/70 focus:border-accent focus:ring-4 focus:ring-accent/15"
-              />
+              <Input name="q" defaultValue={q} placeholder="Buscar nome, e-mail ou time" aria-label="Buscar pessoas" className="max-w-sm" />
             </form>
           )}
 
@@ -160,15 +143,16 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
               { label: `Todos (${users.length})`, href: listHref(q, "all"), active: view === "people" && f === "all" },
               { label: `Ativos (${activeCount})`, href: listHref(q, "active"), active: view === "people" && f === "active" },
               { label: `Suspensos (${suspendedCount})`, href: listHref(q, "suspended"), active: view === "people" && f === "suspended" },
-              { label: `Pedidos (${requests.length})`, href: listHref("", "all", "requests"), active: view === "requests", tour: "people-requests" },
+              { label: `Solicitações de acesso (${requests.length})`, href: listHref("", "all", "requests"), active: view === "requests", tour: "people-requests" },
               { label: "Histórico", href: listHref("", "all", "history"), active: view === "history", tour: "people-history" },
             ]}
           />
 
           {view === "requests" && <PendingRequestsPanel requests={requests} canGrantAdmin={actor.role === "OWNER"} />}
-          {view === "history" && (
+          {view === "history" && history && (
             <DecisionHistory
-              entries={history}
+              entries={history.entries}
+              targets={history.targets}
               pagination={<Pagination info={historyInfo} noun={["evento", "eventos"]} params={sp} {...HISTORY_KEYS} />}
             />
           )}
