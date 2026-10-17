@@ -15,12 +15,12 @@ export const SETUP_STEPS = [
   { id: "welcome", title: "Bem-vindo", description: "O que o hub é, o que este assistente configura e o que ter em mãos." },
   { id: "database", title: "Banco de dados", description: "Escolha, teste e acompanhe as migrations do banco." },
   { id: "login", title: "Formas de login", description: "Escolha como as pessoas vão entrar: redes sociais, provedores corporativos ou e-mail e senha." },
-  { id: "email", title: "E-mail", description: "Servidor SMTP para convite e nova senha. Pode pular e configurar depois." },
+  { id: "email", title: "E-mail", description: "Como o sistema envia convites e links de nova senha. Pode pular e configurar depois." },
   { id: "organization", title: "Organização", description: "Nome da empresa, título do sistema e o que conta como vínculo com a empresa." },
   { id: "repositories", title: "Repositórios", description: "Onde está o código e de onde as specs podem ser lidas." },
   { id: "policies", title: "Regras de acesso", description: "Quem entra direto e quem precisa de aprovação." },
   { id: "environments", title: "Ambientes", description: "Dev, homologação, produção ou outros, e quais branches caem em cada um." },
-  { id: "owner", title: "Primeiro administrador", description: "Quem será o OWNER da instalação." },
+  { id: "owner", title: "Primeiro administrador", description: "Quem será o Proprietário da instalação." },
   { id: "review", title: "Revisar e concluir", description: "Confira tudo e libere o hub." },
 ] as const;
 

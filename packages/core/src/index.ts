@@ -16,6 +16,8 @@ export * from "./themes";
 export * from "./sources";
 export * from "./text";
 export * from "./hub-nav";
+export * from "./command-search";
+export * from "./create-shortcuts";
 export * from "./pagination";
 export * from "./mail";
 export * from "./webhook";

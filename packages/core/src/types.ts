@@ -22,6 +22,27 @@ export const LINK_KIND_LABEL: Record<LinkKind, string> = {
   DEPENDS_ON: "depende de",
 };
 
+/**
+ * Nome de cada papel na interface (achado V2 da auditoria de UX de 02/10/2026): tabelas, menus,
+ * convite e matriz usam este dicionário. O código do papel (OWNER, VIEWER…) não aparece na tela.
+ */
+export const ROLE_LABEL: Record<Role, string> = {
+  OWNER: "Proprietário",
+  ADMIN: "Administrador",
+  MAINTAINER: "Mantenedor",
+  VIEWER: "Leitor",
+};
+
+export const TEAM_ROLE_LABEL: Record<"LEAD" | "MEMBER", string> = { LEAD: "Líder", MEMBER: "Membro" };
+
+/**
+ * Tema da interface por pessoa (achado F5 da auditoria de UX de 02/10/2026). SYSTEM segue o
+ * sistema operacional. O admin não escolhe tema: ele só define a marca (nome e cor de destaque).
+ */
+export type ThemePreference = "LIGHT" | "DARK" | "SYSTEM";
+export const THEME_PREFERENCES: ThemePreference[] = ["LIGHT", "DARK", "SYSTEM"];
+export const THEME_PREFERENCE_LABEL: Record<ThemePreference, string> = { LIGHT: "Claro", DARK: "Escuro", SYSTEM: "Sistema" };
+
 export const SERVICE_REPO_ROLE_LABEL: Record<ServiceRepoRole, string> = {
   SOURCE: "Código-fonte",
   CLIENT_SDK: "SDK cliente",

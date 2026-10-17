@@ -18,6 +18,8 @@
     "./text": "./src/text.ts",
     "./schemas": "./src/schemas.ts",
     "./hub-nav": "./src/hub-nav.ts",
+    "./command-search": "./src/command-search.ts",
+    "./create-shortcuts": "./src/create-shortcuts.ts",
     "./pagination": "./src/pagination.ts",
     "./spec": "./src/spec.ts"
   },

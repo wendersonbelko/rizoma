@@ -3,7 +3,7 @@ import { branchMatches, resolveEnvironment } from "../src/environments";
 import { hashPassword, passwordProblems, verifyPassword } from "../src/password";
 import { affiliationFromProfile, emailDomainAllowed } from "../src/affiliation";
 import { providerInputSchema } from "../src/auth-providers";
-import { contrastRatio, paletteProblems, resolveTheme } from "../src/themes";
+import { accentProblems, buildPalette, contrastRatio, paletteProblems, resolveAccent } from "../src/themes";
 import { expandEnvTemplate, repoFileApiUrl, unsafeHostReason } from "../src/sources";
 import { looksSecret, toDotenv } from "../src/envvars";
 
@@ -57,20 +57,18 @@ describe("vínculo com a empresa", () => {
 });
 
 describe("temas", () => {
-  it("sobrescreve só cores válidas e mede contraste", () => {
-    const t = resolveTheme("oceano", { accent: "#FF0000", ink: "vermelho", xyz: "#000000" });
-    expect(t.palette.accent).toBe("#ff0000");
-    // "oceano" não existe: cai na prancheta e ignora ink inválido.
-    expect(t.palette.ink).toBe("#16242c");
+  it("lê só um destaque válido e mede contraste", () => {
+    // Achado F5 da auditoria de UX: o admin só define o destaque; chaves antigas e cores inválidas são ignoradas.
+    expect(resolveAccent({ accent: "#2563EB", ink: "vermelho", xyz: "#000000" })).toBe("#2563eb");
+    expect(resolveAccent({ ink: "#000000" })).toBe("#0f7a68");
     expect(contrastRatio("#000000", "#ffffff")).toBeCloseTo(21, 0);
   });
-  it("todos os temas prontos passam na checagem de contraste", async () => {
-    const { THEMES } = await import("../src/themes");
-    for (const th of THEMES) expect(paletteProblems(th.palette), th.id).toEqual([]);
+  it("os dois temas gerados passam na checagem de contraste", () => {
+    for (const mode of ["light", "dark"] as const) expect(paletteProblems(buildPalette(mode)), mode).toEqual([]);
   });
-  it("recusa botão ilegível", () => {
-    const t = resolveTheme("prancheta", { accent: "#eeeeee", "accent-ink": "#ffffff" });
-    expect(paletteProblems(t.palette).join()).toMatch(/botões/);
+  it("recusa destaque ilegível", () => {
+    expect(accentProblems("#eeeeee").join()).toMatch(/clara demais/);
+    expect(paletteProblems({ ...buildPalette("light"), accent: "#eeeeee", "accent-ink": "#ffffff" }).join()).toMatch(/botões/);
   });
 });
 

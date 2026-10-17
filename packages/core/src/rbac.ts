@@ -2,7 +2,7 @@ import type { Role } from "./types";
 
 /**
  * Permissões configuráveis por papel (RN-20 a RN-29).
- * O admin edita a matriz em Configurações → Permissões; OWNER sempre tem tudo.
+ * O admin edita a matriz na tela Permissões; OWNER sempre tem tudo.
  * Toda checagem acontece no servidor; a interface só esconde botões.
  */
 export const PERMISSION_DEFS = [
@@ -21,10 +21,10 @@ export const PERMISSION_DEFS = [
   { id: "token:manage", group: "Serviços", label: "Gerar e revogar tokens de CI (próprio time)" },
   { id: "link:edit", group: "Serviços", label: "Cadastrar repositórios e integrações externas compartilhadas" },
   { id: "team:manage", group: "Administração", label: "Criar times e gerenciar membros", sensitive: true },
-  { id: "access:decide", group: "Administração", label: "Aprovar e recusar pedidos de acesso", sensitive: true },
+  { id: "access:decide", group: "Administração", label: "Aprovar e recusar solicitações de acesso", sensitive: true },
   { id: "user:manage", group: "Administração", label: "Convidar pessoas, mudar papéis e suspender", sensitive: true },
   { id: "audit:read", group: "Administração", label: "Ver e exportar a auditoria", sensitive: true },
-  { id: "appearance:manage", group: "Administração", label: "Mudar título e tema do sistema", sensitive: true },
+  { id: "appearance:manage", group: "Administração", label: "Mudar o nome e a cor de destaque do sistema", sensitive: true },
   { id: "settings:manage", group: "Administração", label: "Configurações: login, ambientes, repositórios e regras de acesso", sensitive: true },
   { id: "roles:manage", group: "Administração", label: "Editar esta matriz de permissões", sensitive: true },
 ] as const;
